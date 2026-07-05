@@ -1192,10 +1192,17 @@ function isUnsaturationPredictionId(value: string | undefined): value is Unsatur
 }
 
 function toggleUnsaturationPrediction(prediction: UnsaturationPredictionId): void {
+  if (prediction === 'none') {
+    state.unsaturationPredictions = state.unsaturationPredictions.includes('none') ? [] : ['none'];
+    render();
+    return;
+  }
+
+  const structuralPredictions = state.unsaturationPredictions.filter((item) => item !== 'none');
   if (state.unsaturationPredictions.includes(prediction)) {
-    state.unsaturationPredictions = state.unsaturationPredictions.filter((item) => item !== prediction);
+    state.unsaturationPredictions = structuralPredictions.filter((item) => item !== prediction);
   } else {
-    state.unsaturationPredictions = [...state.unsaturationPredictions, prediction];
+    state.unsaturationPredictions = [...structuralPredictions, prediction];
   }
   render();
 }

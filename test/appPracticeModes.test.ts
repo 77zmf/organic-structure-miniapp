@@ -144,6 +144,51 @@ describe('app method and unsaturation pages', () => {
     );
   });
 
+  test('selecting none clears structural unsaturation predictions', async () => {
+    const unsaturationTab = createModeButton('unsaturation');
+    const benzenePrediction = createUnsaturationPredictionButton('benzene-ring');
+    const nonePrediction = createUnsaturationPredictionButton('none');
+    const root = createRoot({
+      modeButtons: [unsaturationTab.button],
+      unsaturationPredictionButtons: [benzenePrediction.button, nonePrediction.button]
+    });
+
+    await importApp(root);
+    unsaturationTab.click();
+
+    nonePrediction.click();
+
+    expect(root.innerHTML).toContain(
+      'class="choice-chip" data-unsaturation-prediction="benzene-ring" type="button" aria-pressed="false"'
+    );
+    expect(root.innerHTML).toContain(
+      'class="choice-chip selected" data-unsaturation-prediction="none" type="button" aria-pressed="true"'
+    );
+  });
+
+  test('selecting a structural prediction clears none', async () => {
+    const unsaturationTab = createModeButton('unsaturation');
+    const nonePrediction = createUnsaturationPredictionButton('none');
+    const carbonylPrediction = createUnsaturationPredictionButton('carbonyl');
+    const root = createRoot({
+      modeButtons: [unsaturationTab.button],
+      unsaturationPredictionButtons: [nonePrediction.button, carbonylPrediction.button]
+    });
+
+    await importApp(root);
+    unsaturationTab.click();
+
+    nonePrediction.click();
+    carbonylPrediction.click();
+
+    expect(root.innerHTML).toContain(
+      'class="choice-chip selected" data-unsaturation-prediction="carbonyl" type="button" aria-pressed="true"'
+    );
+    expect(root.innerHTML).toContain(
+      'class="choice-chip" data-unsaturation-prediction="none" type="button" aria-pressed="false"'
+    );
+  });
+
   test('renders textbook method guide flows', async () => {
     const methodTab = createModeButton('method');
     const root = createRoot({ modeButtons: [methodTab.button] });
