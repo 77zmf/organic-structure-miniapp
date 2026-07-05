@@ -1,4 +1,5 @@
 export type FunctionalGroup =
+  | 'alkane'
   | 'alkene'
   | 'alkyne'
   | 'alcohol'
@@ -59,6 +60,16 @@ export interface GuessResult {
 }
 
 export const compounds: Compound[] = [
+  {
+    id: 'methane',
+    name: '甲烷',
+    formula: 'CH4',
+    aliases: ['甲烷', 'methane', 'ch4'],
+    structureFormula: 'CH4',
+    functionalGroups: ['alkane'],
+    level: 'basic',
+    summary: '饱和烃，常见高中条件下性质较稳定，典型反应是光照条件下与氯气发生取代反应。'
+  },
   {
     id: 'ethene',
     name: '乙烯',
