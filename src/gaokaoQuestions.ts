@@ -19,13 +19,13 @@ export const gaokaoQuestions: GaokaoQuestion[] = [
     publicClues: ['只含 C、H 两种元素', '不饱和度为 1']
   },
   {
-    id: 'gk-alkyne-addition',
+    id: 'gk-alkene-oxidation',
     puzzleId: 'puzzle-ethene',
-    title: '不饱和度与加成反应对比',
+    title: '烯烃加成与氧化辨析',
     formula: 'C2H4',
-    examFocus: ['加成反应', '不饱和度', '烯烃鉴别'],
-    task: '先用不饱和度缩小范围，再追问实验性质验证是否含碳碳不饱和键。',
-    publicClues: ['该题用于比较烯烃与其他不饱和结构的验证方式']
+    examFocus: ['烯烃', '加成反应', '酸性高锰酸钾氧化'],
+    task: '用溴的四氯化碳溶液和酸性高锰酸钾溶液的现象辨析烯烃的加成与氧化性质。',
+    publicClues: ['只含 C、H 两种元素', '能被酸性高锰酸钾溶液氧化']
   },
   {
     id: 'gk-alcohol-ether',
@@ -88,7 +88,7 @@ export const gaokaoQuestions: GaokaoQuestion[] = [
     formula: 'C3H8O',
     examFocus: ['同分异构体', '红外光谱', '核磁共振氢谱', '醇醚鉴别'],
     task: '结合 O-H、C-O 吸收和氢谱峰组数判断结构。',
-    publicClues: ['相对分子质量为 60', '红外显示 O-H 和 C-O']
+    publicClues: ['相对分子质量为 60', '红外显示 O-H 和 C-O', '氢谱有四组信号，峰面积比为 2∶1∶2∶3']
   },
   {
     id: 'gk-ir-nmr-butanol',
