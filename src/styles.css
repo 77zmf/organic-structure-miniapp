@@ -3,15 +3,19 @@
   --paper: #f7f6f1;
   --surface: #ffffff;
   --surface-strong: #eef5f2;
+  --surface-muted: #fbfcfa;
   --ink: #17201d;
   --muted: #5d6862;
   --line: #d7ded8;
   --teal: #137b72;
   --teal-dark: #0e5c56;
+  --teal-soft: #e7f4f1;
   --amber: #c6861f;
   --rose: #b64c63;
   --blue: #315f9c;
+  --focus: rgba(19, 123, 114, 0.22);
   --shadow: 0 14px 36px rgba(27, 41, 37, 0.08);
+  --shadow-soft: 0 8px 22px rgba(27, 41, 37, 0.07);
   font-family:
     Inter, "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui,
     sans-serif;
@@ -37,12 +41,25 @@ input {
 
 button {
   cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    box-shadow 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
 }
 
 button:disabled,
 input:disabled {
   cursor: not-allowed;
   opacity: 0.58;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .app-shell {
@@ -57,6 +74,7 @@ input:disabled {
   justify-content: space-between;
   gap: 16px;
   min-height: 88px;
+  padding-bottom: 4px;
 }
 
 .eyebrow,
@@ -84,11 +102,13 @@ h2 {
   margin-bottom: 0;
   font-size: 22px;
   line-height: 1.25;
+  text-wrap: balance;
 }
 
 h3 {
   margin-bottom: 0;
   font-size: 18px;
+  line-height: 1.3;
 }
 
 .github-link,
@@ -116,6 +136,24 @@ h3 {
   text-decoration: none;
 }
 
+.github-link:hover,
+.icon-text-button:hover,
+.choice-chip:hover,
+.judge-button:hover,
+.quick-question:hover,
+.toggle-button:hover,
+.segment-button:hover {
+  border-color: rgba(19, 123, 114, 0.42);
+  background: var(--teal-soft);
+}
+
+.primary-action:hover,
+.send-button:hover {
+  border-color: var(--teal-dark);
+  background: var(--teal-dark);
+  box-shadow: var(--shadow-soft);
+}
+
 .github-link svg,
 button svg {
   width: 18px;
@@ -125,43 +163,73 @@ button svg {
 .mode-tabs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin: 8px 0 18px;
+  gap: 12px;
+  margin: 10px 0 18px;
 }
 
 .mode-tab {
   display: grid;
   grid-template-columns: 24px 1fr;
-  gap: 2px 10px;
+  gap: 4px 10px;
   align-items: center;
-  min-height: 64px;
-  padding: 12px;
+  min-height: 76px;
+  padding: 14px;
   text-align: left;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.78) inset;
+}
+
+.mode-tab span {
+  font-weight: 900;
+  line-height: 1.25;
 }
 
 .mode-tab small {
   grid-column: 2;
   color: var(--muted);
   font-size: 12px;
+  line-height: 1.35;
 }
 
 .mode-tab.active {
   border-color: rgba(19, 123, 114, 0.42);
-  background: var(--surface-strong);
-  box-shadow: inset 0 0 0 1px rgba(19, 123, 114, 0.18);
+  background:
+    linear-gradient(90deg, rgba(19, 123, 114, 0.14), transparent 7px),
+    var(--surface-strong);
+  box-shadow:
+    inset 0 0 0 1px rgba(19, 123, 114, 0.18),
+    var(--shadow-soft);
 }
 
 .viewer-controls {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   margin: 0 0 18px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.82) inset;
+}
+
+.viewer-control-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.viewer-control-label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
 }
 
 .segmented-control {
   display: inline-grid;
-  grid-template-columns: repeat(2, minmax(108px, 1fr));
+  grid-template-columns: repeat(2, minmax(112px, 1fr));
   border: 1px solid var(--line);
   border-radius: 8px;
   overflow: hidden;
@@ -170,7 +238,7 @@ button svg {
 
 .segment-button,
 .toggle-button {
-  min-height: 40px;
+  min-height: 44px;
   border: 0;
   background: var(--surface);
   color: var(--ink);
@@ -187,19 +255,21 @@ button svg {
 
 .segment-button.active,
 .toggle-button.active {
-  background: #eaf6f3;
+  background: var(--teal-soft);
   color: var(--teal-dark);
+  box-shadow: inset 0 0 0 1px rgba(19, 123, 114, 0.12);
 }
 
 .toggle-button {
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 0 14px;
+  padding: 0 16px;
+  white-space: nowrap;
 }
 
 .workspace {
   display: grid;
-  gap: 16px;
+  gap: 18px;
 }
 
 .workspace > * {
@@ -218,7 +288,7 @@ button svg {
   min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.95);
   box-shadow: var(--shadow);
 }
 
@@ -237,6 +307,10 @@ button svg {
   margin-bottom: 16px;
 }
 
+.panel-title-row > div {
+  min-width: 0;
+}
+
 .icon-text-button,
 .primary-action,
 .send-button {
@@ -244,9 +318,10 @@ button svg {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 14px;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .primary-action,
@@ -257,21 +332,29 @@ button svg {
 }
 
 .primary-action.compact {
-  min-width: 82px;
+  min-width: 88px;
 }
 
 .molecule-viewer {
   display: block;
   width: 100%;
-  min-height: 310px;
+  min-height: 320px;
   aspect-ratio: 13 / 8.5;
   margin: 14px 0;
-  border: 1px solid #dbe4dd;
+  border: 1px solid #cfdbd4;
   border-radius: 8px;
   overflow: hidden;
   background:
-    radial-gradient(circle at 20% 20%, rgba(198, 134, 31, 0.12), transparent 26%),
-    linear-gradient(135deg, rgba(49, 95, 156, 0.08), rgba(19, 123, 114, 0.06));
+    linear-gradient(rgba(49, 95, 156, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(19, 123, 114, 0.05) 1px, transparent 1px),
+    linear-gradient(135deg, #fbfcfa, #eef5f2);
+  background-size:
+    24px 24px,
+    24px 24px,
+    auto;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.72),
+    0 10px 22px rgba(27, 41, 37, 0.08);
 }
 
 .molecule-viewer canvas {
@@ -304,12 +387,12 @@ button svg {
 }
 
 .molecule-viewer.compact {
-  min-height: 260px;
+  min-height: 250px;
   aspect-ratio: 1 / 1;
 }
 
 .molecule-viewer.puzzle-target {
-  min-height: 280px;
+  min-height: 292px;
   margin-bottom: 0;
 }
 
@@ -323,6 +406,10 @@ button svg {
   display: grid;
   grid-template-columns: 72px 1fr;
   gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid rgba(215, 222, 216, 0.74);
+  border-radius: 8px;
+  background: var(--surface-muted);
 }
 
 .compound-facts dt {
@@ -332,6 +419,7 @@ button svg {
 .compound-facts dd {
   margin: 0;
   font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
 .compound-summary,
@@ -348,14 +436,17 @@ button svg {
 }
 
 .choice-chip {
-  min-height: 64px;
-  padding: 10px 12px;
+  display: grid;
+  align-content: center;
+  min-height: 76px;
+  padding: 12px 14px;
   text-align: left;
 }
 
 .choice-chip span {
   display: block;
   font-weight: 800;
+  line-height: 1.3;
 }
 
 .choice-chip small {
@@ -367,7 +458,8 @@ button svg {
 .choice-chip.selected,
 .judge-button.selected {
   border-color: var(--teal);
-  background: #eaf6f3;
+  background: var(--teal-soft);
+  box-shadow: inset 0 0 0 1px rgba(19, 123, 114, 0.16);
 }
 
 .answer-row {
@@ -378,7 +470,7 @@ button svg {
 }
 
 .judge-button {
-  min-height: 48px;
+  min-height: 56px;
   font-weight: 800;
 }
 
@@ -402,7 +494,7 @@ button svg {
 .text-input {
   width: 100%;
   min-width: 0;
-  min-height: 42px;
+  min-height: 46px;
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 0 12px;
@@ -411,9 +503,11 @@ button svg {
   outline: none;
 }
 
-.text-input:focus {
+.text-input:focus,
+.text-input:focus-visible {
   border-color: var(--teal);
   box-shadow: 0 0 0 3px rgba(19, 123, 114, 0.14);
+  outline: none;
 }
 
 .feedback {
@@ -422,6 +516,7 @@ button svg {
   gap: 10px;
   margin-top: 16px;
   padding: 12px;
+  border: 1px solid transparent;
   border-radius: 8px;
   line-height: 1.65;
 }
@@ -433,11 +528,13 @@ button svg {
 .feedback.good {
   color: var(--teal-dark);
   background: #e9f7ef;
+  border-color: #c8e9d7;
 }
 
 .feedback.review {
   color: #7a3d10;
   background: #fff3dc;
+  border-color: #f0d8a6;
 }
 
 .compound-pair {
@@ -448,6 +545,8 @@ button svg {
 }
 
 .compound-mini {
+  display: grid;
+  gap: 10px;
   min-height: 430px;
   padding: 16px;
 }
@@ -461,6 +560,7 @@ button svg {
 .compound-mini span {
   display: block;
   text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .reaction-mark {
@@ -487,11 +587,15 @@ button svg {
   border: 1px solid #dbe4dd;
   border-radius: 8px;
   background:
-    linear-gradient(135deg, rgba(198, 134, 31, 0.15), rgba(49, 95, 156, 0.1)),
+    linear-gradient(90deg, rgba(198, 134, 31, 0.16), transparent 10px),
+    linear-gradient(135deg, rgba(49, 95, 156, 0.08), rgba(19, 123, 114, 0.06)),
     #fff;
   color: var(--blue);
   font-size: 44px;
   font-weight: 900;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .locked-visualization,
@@ -499,7 +603,7 @@ button svg {
   margin: 16px 0;
   border: 1px solid #dbe4dd;
   border-radius: 8px;
-  background: #fbfcfa;
+  background: var(--surface-muted);
 }
 
 .locked-visualization {
@@ -507,6 +611,12 @@ button svg {
   place-items: center;
   min-height: 280px;
   padding: 20px;
+  border-style: dashed;
+  background:
+    linear-gradient(rgba(49, 95, 156, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(19, 123, 114, 0.05) 1px, transparent 1px),
+    #fbfcfa;
+  background-size: 28px 28px;
   text-align: center;
 }
 
@@ -521,6 +631,7 @@ button svg {
   color: var(--blue);
   font-size: 42px;
   line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .locked-visualization p {
@@ -532,6 +643,7 @@ button svg {
 
 .puzzle-target-panel {
   padding: 14px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8);
 }
 
 .puzzle-target-title {
@@ -543,6 +655,8 @@ button svg {
 
 .puzzle-target-title strong {
   font-size: 18px;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .inline-form,
@@ -566,11 +680,13 @@ button svg {
 }
 
 .quick-question {
-  min-height: 34px;
-  padding: 0 10px;
+  min-height: 40px;
+  padding: 0 12px;
   color: var(--teal-dark);
   font-size: 13px;
   font-weight: 800;
+  line-height: 1.35;
+  white-space: normal;
 }
 
 .chat-log {
@@ -583,7 +699,7 @@ button svg {
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #fbfcfa;
+  background: var(--surface-muted);
 }
 
 .chat-message {
@@ -616,6 +732,7 @@ button svg {
   border-radius: 8px;
   background: #fff;
   line-height: 1.65;
+  overflow-wrap: anywhere;
   box-shadow: inset 0 0 0 1px rgba(215, 222, 216, 0.8);
 }
 
@@ -648,7 +765,6 @@ button svg {
   }
 
   .mode-tabs,
-  .viewer-controls,
   .two-column,
   .puzzle-layout,
   .compound-pair {
@@ -658,6 +774,12 @@ button svg {
   .viewer-controls {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .viewer-control-group {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .segmented-control {
@@ -672,25 +794,70 @@ button svg {
     min-height: auto;
   }
 
+  .molecule-viewer.compact {
+    min-height: 300px;
+    aspect-ratio: 13 / 8.5;
+  }
+
   .selector-grid {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 520px) {
-  .mode-tab {
-    grid-template-columns: 1fr;
+  .app-shell {
+    width: min(100% - 16px, 720px);
   }
 
-  .mode-tab svg,
+  .topbar {
+    gap: 12px;
+    min-height: auto;
+  }
+
+  .github-link,
+  .icon-text-button,
+  .primary-action,
+  .send-button {
+    width: 100%;
+  }
+
+  .mode-tabs {
+    gap: 8px;
+  }
+
+  .mode-tab {
+    grid-template-columns: 22px 1fr;
+    min-height: 54px;
+    padding: 10px 12px;
+  }
+
   .mode-tab small {
     display: none;
   }
 
-  .panel-title-row,
+  .panel-title-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
   .inline-form,
   .chat-input-row {
     grid-template-columns: 1fr;
+  }
+
+  .compound-panel,
+  .task-panel,
+  .formula-panel,
+  .chat-panel,
+  .compound-mini {
+    padding: 14px;
+  }
+
+  .molecule-viewer,
+  .molecule-viewer.compact,
+  .molecule-viewer.puzzle-target {
+    min-height: 250px;
+    aspect-ratio: 1 / 1;
   }
 
   .answer-row {
@@ -705,7 +872,17 @@ button svg {
     font-size: 36px;
   }
 
-  .send-button {
-    width: 100%;
+  .compound-facts div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .puzzle-target-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .puzzle-target-title strong {
+    text-align: left;
   }
 }

@@ -158,9 +158,10 @@ function render(): void {
 }
 
 function modeButton(mode: Mode, label: string, detail: string, icon: string): string {
-  const active = state.mode === mode ? 'active' : '';
+  const isActive = state.mode === mode;
+  const active = isActive ? 'active' : '';
   return `
-    <button class="mode-tab ${active}" data-mode="${mode}" type="button">
+    <button class="mode-tab ${active}" data-mode="${mode}" type="button" aria-pressed="${isActive}">
       <i data-lucide="${icon}" aria-hidden="true"></i>
       <span>${label}</span>
       <small>${detail}</small>
@@ -171,9 +172,12 @@ function modeButton(mode: Mode, label: string, detail: string, icon: string): st
 function renderViewerControls(): string {
   return `
     <section class="viewer-controls" aria-label="三维模型显示设置">
-      <div class="segmented-control" role="group" aria-label="模型显示方式">
-        ${viewerModeButton('ball-stick', '球棍')}
-        ${viewerModeButton('space-fill', '空间填充')}
+      <div class="viewer-control-group">
+        <span class="viewer-control-label">3D 显示</span>
+        <div class="segmented-control" role="group" aria-label="模型显示方式">
+          ${viewerModeButton('ball-stick', '球棍')}
+          ${viewerModeButton('space-fill', '空间填充')}
+        </div>
       </div>
       <button class="toggle-button ${state.highlightFunctionalGroup ? 'active' : ''}" data-toggle-highlight="functional-group" type="button" aria-pressed="${state.highlightFunctionalGroup}">
         官能团高亮
@@ -292,7 +296,7 @@ function renderReagentMode(): string {
           ${reagents
             .map(
               (item) => `
-                <button class="choice-chip ${item.id === state.reagentId ? 'selected' : ''}" data-reagent="${item.id}" type="button">
+                <button class="choice-chip ${item.id === state.reagentId ? 'selected' : ''}" data-reagent="${item.id}" type="button" aria-pressed="${item.id === state.reagentId}">
                   <span>${item.name}</span>
                   <small>${item.prompt}</small>
                 </button>
@@ -302,10 +306,10 @@ function renderReagentMode(): string {
         </div>
 
         <div class="answer-row" aria-label="反应判断">
-          <button class="judge-button ${state.reagentAnswer === 'yes' ? 'selected yes' : ''}" data-answer="yes" type="button">
+          <button class="judge-button ${state.reagentAnswer === 'yes' ? 'selected yes' : ''}" data-answer="yes" type="button" aria-pressed="${state.reagentAnswer === 'yes'}">
             会反应
           </button>
-          <button class="judge-button ${state.reagentAnswer === 'no' ? 'selected no' : ''}" data-answer="no" type="button">
+          <button class="judge-button ${state.reagentAnswer === 'no' ? 'selected no' : ''}" data-answer="no" type="button" aria-pressed="${state.reagentAnswer === 'no'}">
             不反应
           </button>
         </div>
@@ -346,10 +350,10 @@ function renderPairMode(): string {
         </div>
 
         <div class="answer-row" aria-label="有机物间反应判断">
-          <button class="judge-button ${state.pairAnswer === 'yes' ? 'selected yes' : ''}" data-pair-answer="yes" type="button">
+          <button class="judge-button ${state.pairAnswer === 'yes' ? 'selected yes' : ''}" data-pair-answer="yes" type="button" aria-pressed="${state.pairAnswer === 'yes'}">
             能反应
           </button>
-          <button class="judge-button ${state.pairAnswer === 'no' ? 'selected no' : ''}" data-pair-answer="no" type="button">
+          <button class="judge-button ${state.pairAnswer === 'no' ? 'selected no' : ''}" data-pair-answer="no" type="button" aria-pressed="${state.pairAnswer === 'no'}">
             不反应
           </button>
         </div>
