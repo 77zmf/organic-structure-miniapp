@@ -5,8 +5,8 @@ import {
   sanitizeAgentAnswer,
   shouldBlockDirectReveal,
   validateDeepSeekProxyRequest
-} from '../shared/deepseekProxy';
-import { findPuzzleById } from '../src/chemistry';
+} from '../shared/deepseekProxy.js';
+import { findPuzzleById } from '../src/chemistry.js';
 
 interface VercelRequest {
   method?: string;

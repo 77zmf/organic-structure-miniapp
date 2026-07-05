@@ -4,7 +4,7 @@ import {
   type FormulaPuzzle,
   findCompoundById,
   findPuzzleById
-} from '../src/chemistry';
+} from '../src/chemistry.js';
 
 export type ChatRole = 'student' | 'agent';
 

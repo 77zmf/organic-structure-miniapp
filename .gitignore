@@ -4,7 +4,7 @@ dist/
 .superpowers/
 .worktrees/
 output/
-.env
-.env.*
 .DS_Store
 *.log
+.env*
+.vercel/
