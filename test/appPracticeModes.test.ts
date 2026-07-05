@@ -231,6 +231,169 @@ describe('app pair classroom selection', () => {
     expect(root.innerHTML).toContain('data-input="pair-second-compound"');
     expect(root.innerHTML).toContain('随机一组');
   });
+
+  test('renders pair role prediction choices before pair submission', async () => {
+    const pairTab = createModeButton('pair');
+    const root = createRoot({ modeButtons: [pairTab.button] });
+
+    await importApp(root);
+    pairTab.click();
+
+    expect(root.innerHTML).toContain('先判断反应角色');
+    expect(root.innerHTML).toContain('data-pair-role="left:hydroxyl"');
+    expect(root.innerHTML).toContain('data-pair-role="right:carboxyl"');
+    expect(root.innerHTML.indexOf('先判断反应角色')).toBeLessThan(root.innerHTML.indexOf('data-action="submit-pair"'));
+    expect(root.innerHTML).not.toContain('角色判断正确');
+    expect(root.innerHTML).not.toContain('角色需要复盘');
+  });
+
+  test('selects one pair role for each side', async () => {
+    const pairTab = createModeButton('pair');
+    const leftHydroxyl = createPairRoleButton('left:hydroxyl');
+    const leftCarboxyl = createPairRoleButton('left:carboxyl');
+    const rightCarboxyl = createPairRoleButton('right:carboxyl');
+    const root = createRoot({
+      modeButtons: [pairTab.button],
+      pairRoleButtons: [leftHydroxyl.button, leftCarboxyl.button, rightCarboxyl.button]
+    });
+
+    await importApp(root);
+    pairTab.click();
+
+    leftHydroxyl.click();
+    rightCarboxyl.click();
+
+    expect(root.innerHTML).toContain(
+      'class="choice-chip selected" data-pair-role="left:hydroxyl" type="button" aria-pressed="true"'
+    );
+    expect(root.innerHTML).toContain(
+      'class="choice-chip selected" data-pair-role="right:carboxyl" type="button" aria-pressed="true"'
+    );
+
+    leftCarboxyl.click();
+
+    expect(root.innerHTML).toContain(
+      'class="choice-chip" data-pair-role="left:hydroxyl" type="button" aria-pressed="false"'
+    );
+    expect(root.innerHTML).toContain(
+      'class="choice-chip selected" data-pair-role="left:carboxyl" type="button" aria-pressed="true"'
+    );
+    expect(root.innerHTML).toContain(
+      'class="choice-chip selected" data-pair-role="right:carboxyl" type="button" aria-pressed="true"'
+    );
+  });
+
+  test('resets pair role predictions when pair compounds change', async () => {
+    const pairTab = createModeButton('pair');
+    const leftHydroxyl = createPairRoleButton('left:hydroxyl');
+    const pairFirstInput = createInput('pair-first-compound', 'benzene');
+    const root = createRoot({
+      modeButtons: [pairTab.button],
+      pairRoleButtons: [leftHydroxyl.button],
+      inputElements: [pairFirstInput.input]
+    });
+
+    await importApp(root);
+    pairTab.click();
+
+    leftHydroxyl.click();
+
+    expect(root.innerHTML).toContain(
+      'class="choice-chip selected" data-pair-role="left:hydroxyl" type="button" aria-pressed="true"'
+    );
+
+    pairFirstInput.input.value = 'benzene';
+    pairFirstInput.inputEvent();
+
+    expect(root.innerHTML).toContain(
+      'class="choice-chip" data-pair-role="left:hydroxyl" type="button" aria-pressed="false"'
+    );
+  });
+
+  test('resets pair role predictions when a random pair is requested', async () => {
+    const pairTab = createModeButton('pair');
+    const leftHydroxyl = createPairRoleButton('left:hydroxyl');
+    const newPair = createActionButton('new-pair');
+    const root = createRoot({
+      modeButtons: [pairTab.button],
+      pairRoleButtons: [leftHydroxyl.button],
+      actionButtons: [newPair.button]
+    });
+
+    await importApp(root);
+    pairTab.click();
+
+    leftHydroxyl.click();
+
+    expect(root.innerHTML).toContain(
+      'class="choice-chip selected" data-pair-role="left:hydroxyl" type="button" aria-pressed="true"'
+    );
+
+    newPair.click();
+
+    expect(root.innerHTML).toContain(
+      'class="choice-chip" data-pair-role="left:hydroxyl" type="button" aria-pressed="false"'
+    );
+    expect(root.innerHTML).not.toMatch(/角色判断正确|角色需要复盘/);
+  });
+
+  test('compares selected pair roles after submitting pair answer', async () => {
+    const pairTab = createModeButton('pair');
+    const leftHydroxyl = createPairRoleButton('left:hydroxyl');
+    const rightCarboxyl = createPairRoleButton('right:carboxyl');
+    const yesAnswer = createPairAnswerButton('yes');
+    const submitPair = createActionButton('submit-pair');
+    const pairTypeInput = createInput('pair-type', '酯化反应');
+    const root = createRoot({
+      modeButtons: [pairTab.button],
+      pairRoleButtons: [leftHydroxyl.button, rightCarboxyl.button],
+      pairAnswerButtons: [yesAnswer.button],
+      actionButtons: [submitPair.button],
+      inputElements: [pairTypeInput.input]
+    });
+
+    await importApp(root);
+    pairTab.click();
+
+    leftHydroxyl.click();
+    rightCarboxyl.click();
+    yesAnswer.click();
+    pairTypeInput.inputEvent();
+
+    expect(root.innerHTML).not.toContain('角色判断正确');
+
+    submitPair.click();
+
+    expect(root.innerHTML).toContain('正确：能反应');
+    expect(root.innerHTML).toContain('角色判断正确');
+  });
+
+  test('shows expected pair roles after submitting conflicting role predictions', async () => {
+    const pairTab = createModeButton('pair');
+    const leftCarboxyl = createPairRoleButton('left:carboxyl');
+    const rightHydroxyl = createPairRoleButton('right:hydroxyl');
+    const yesAnswer = createPairAnswerButton('yes');
+    const submitPair = createActionButton('submit-pair');
+    const pairTypeInput = createInput('pair-type', '酯化反应');
+    const root = createRoot({
+      modeButtons: [pairTab.button],
+      pairRoleButtons: [leftCarboxyl.button, rightHydroxyl.button],
+      pairAnswerButtons: [yesAnswer.button],
+      actionButtons: [submitPair.button],
+      inputElements: [pairTypeInput.input]
+    });
+
+    await importApp(root);
+    pairTab.click();
+
+    leftCarboxyl.click();
+    rightHydroxyl.click();
+    yesAnswer.click();
+    pairTypeInput.inputEvent();
+    submitPair.click();
+
+    expect(root.innerHTML).toContain('角色需要复盘：左侧更像提供羟基，右侧更像提供羧基');
+  });
 });
 
 describe('app chemistry notation and advanced puzzle clues', () => {
@@ -498,6 +661,8 @@ interface FakeRootOptions {
   answerButtons?: HTMLButtonElement[];
   methodNodeButtons?: HTMLButtonElement[];
   phenomenonButtons?: HTMLButtonElement[];
+  pairAnswerButtons?: HTMLButtonElement[];
+  pairRoleButtons?: HTMLButtonElement[];
   reagentButtons?: HTMLButtonElement[];
   reagentPracticeModeButtons?: HTMLButtonElement[];
   unsaturationPredictionButtons?: HTMLButtonElement[];
@@ -522,6 +687,12 @@ function createRoot(options: FakeRootOptions = {}): HTMLDivElement {
       }
       if (selector === '[data-phenomenon]') {
         return options.phenomenonButtons ?? [];
+      }
+      if (selector === '[data-pair-answer]') {
+        return options.pairAnswerButtons ?? [];
+      }
+      if (selector === '[data-pair-role]') {
+        return options.pairRoleButtons ?? [];
       }
       if (selector === '[data-reagent]') {
         return options.reagentButtons ?? [];
@@ -588,6 +759,22 @@ function createAnswerButton(answer: string): {
   };
 }
 
+function createPairAnswerButton(pairAnswer: string): {
+  button: HTMLButtonElement;
+  click: () => void;
+} {
+  let listener: (() => void) | null = null;
+  return {
+    button: {
+      dataset: { pairAnswer },
+      addEventListener: vi.fn((eventName: string, callback: () => void) => {
+        if (eventName === 'click') listener = callback;
+      })
+    } as unknown as HTMLButtonElement,
+    click: () => listener?.()
+  };
+}
+
 function createMethodNodeButton(methodNode: string): {
   button: HTMLButtonElement;
   click: () => void;
@@ -612,6 +799,22 @@ function createPhenomenonButton(phenomenon: string): {
   return {
     button: {
       dataset: { phenomenon },
+      addEventListener: vi.fn((eventName: string, callback: () => void) => {
+        if (eventName === 'click') listener = callback;
+      })
+    } as unknown as HTMLButtonElement,
+    click: () => listener?.()
+  };
+}
+
+function createPairRoleButton(pairRole: string): {
+  button: HTMLButtonElement;
+  click: () => void;
+} {
+  let listener: (() => void) | null = null;
+  return {
+    button: {
+      dataset: { pairRole },
       addEventListener: vi.fn((eventName: string, callback: () => void) => {
         if (eventName === 'click') listener = callback;
       })

@@ -48,9 +48,13 @@ import {
 import {
   curiosityQuestions,
   getExpectedPhenomena,
+  getPairRoleForCompound,
   getUnsaturationPredictionFeedback,
   methodNodeDetails,
+  pairRoleLabel,
+  pairRoleOptions,
   phenomenonOptions,
+  type PairRoleId,
   type PhenomenonId,
   type UnsaturationPredictionId,
   unsaturationPredictionOptions
@@ -58,10 +62,16 @@ import {
 
 type Mode = 'method' | 'unsaturation' | 'reagent' | 'pair' | 'puzzle';
 type YesNo = 'yes' | 'no' | null;
+type PairRoleSide = 'left' | 'right';
 
 interface ChatMessage {
   role: 'student' | 'agent';
   text: string;
+}
+
+interface PairRolePredictions {
+  left: PairRoleId | null;
+  right: PairRoleId | null;
 }
 
 interface AppState {
@@ -78,6 +88,7 @@ interface AppState {
   pairAnswer: YesNo;
   pairTypeGuess: string;
   pairFeedback: string;
+  pairRolePredictions: PairRolePredictions;
   puzzleId: string;
   puzzleUnlocked: boolean;
   puzzleUnlockedCompoundId: string | null;
@@ -123,6 +134,7 @@ const state: AppState = {
   pairAnswer: null,
   pairTypeGuess: '',
   pairFeedback: '',
+  pairRolePredictions: { left: null, right: null },
   puzzleId: initialPuzzleUnlock.puzzleId,
   puzzleUnlocked: initialPuzzleUnlock.unlocked,
   puzzleUnlockedCompoundId: initialPuzzleUnlock.unlockedCompoundId,
@@ -667,6 +679,8 @@ function renderPairMode(): string {
           </button>
         </div>
 
+        ${renderPairRolePredictionPanel()}
+
         <div class="answer-row" aria-label="有机物间反应判断">
           <button class="judge-button ${state.pairAnswer === 'yes' ? 'selected yes' : ''}" data-pair-answer="yes" type="button" aria-pressed="${state.pairAnswer === 'yes'}">
             能反应
@@ -687,6 +701,43 @@ function renderPairMode(): string {
         ${feedbackBlock(state.pairFeedback)}
       </section>
     </section>
+  `;
+}
+
+function renderPairRolePredictionPanel(): string {
+  return `
+    <section class="prediction-panel" aria-label="先判断反应角色">
+      <div class="prediction-title-row">
+        <p class="section-kicker">反应角色</p>
+        <h3>先判断反应角色</h3>
+      </div>
+      <div class="pair-role-grid">
+        ${renderPairRoleGroup('left', '左侧分子')}
+        ${renderPairRoleGroup('right', '右侧分子')}
+      </div>
+    </section>
+  `;
+}
+
+function renderPairRoleGroup(side: PairRoleSide, label: string): string {
+  return `
+    <div class="pair-role-group">
+      <span class="pair-role-group-label">${label}</span>
+      <div class="prediction-grid">
+        ${pairRoleOptions
+          .map((option) => {
+            const selected = state.pairRolePredictions[side] === option.id;
+            const className = selected ? 'choice-chip selected' : 'choice-chip';
+            return `
+              <button class="${className}" data-pair-role="${side}:${option.id}" type="button" aria-pressed="${selected}">
+                <span>${escapeHtml(option.label)}</span>
+                <small>${escapeHtml(option.detail)}</small>
+              </button>
+            `;
+          })
+          .join('')}
+      </div>
+    </div>
   `;
 }
 
@@ -1118,6 +1169,19 @@ function bindEvents(): void {
     });
   });
 
+  appRoot.querySelectorAll<HTMLButtonElement>('[data-pair-role]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const parsed = parsePairRoleValue(button.dataset.pairRole);
+      if (!parsed) {
+        return;
+      }
+
+      state.pairRolePredictions[parsed.side] = parsed.role;
+      state.pairFeedback = '';
+      render();
+    });
+  });
+
   appRoot.querySelectorAll<HTMLButtonElement>('[data-reagent]').forEach((button) => {
     button.addEventListener('click', () => {
       if (state.reagentPracticeMode === 'challenge') {
@@ -1246,6 +1310,24 @@ function isUnsaturationPredictionId(value: string | undefined): value is Unsatur
 
 function isPhenomenonId(value: string | undefined): value is PhenomenonId {
   return value !== undefined && phenomenonOptions.some((option) => option.id === value);
+}
+
+function isPairRoleId(value: string | undefined): value is PairRoleId {
+  return value !== undefined && pairRoleOptions.some((option) => option.id === value);
+}
+
+function parsePairRoleValue(value: string | undefined): { side: PairRoleSide; role: PairRoleId } | null {
+  const parts = value?.split(':') ?? [];
+  if (parts.length !== 2) {
+    return null;
+  }
+
+  const [side, role] = parts;
+  if ((side !== 'left' && side !== 'right') || !isPairRoleId(role)) {
+    return null;
+  }
+
+  return { side, role };
 }
 
 function isReagentId(value: string | undefined): value is string {
@@ -1399,6 +1481,7 @@ function newPairChallenge(): void {
   state.pairAnswer = null;
   state.pairTypeGuess = '';
   state.pairFeedback = '';
+  resetPairRolePredictions();
   render();
 }
 
@@ -1421,6 +1504,7 @@ function selectPair(side: PairSide, compoundId: string): void {
   state.pairAnswer = next.answer;
   state.pairTypeGuess = next.typeGuess;
   state.pairFeedback = next.feedback;
+  resetPairRolePredictions();
   render();
 }
 
@@ -1439,10 +1523,28 @@ function submitPairAnswer(): void {
   const expected = reaction.reacts ? 'yes' : 'no';
   const isCorrect = state.pairAnswer === expected;
   const typeMatched = !reaction.reacts || normalizeLoose(state.pairTypeGuess).includes(normalizeLoose(reaction.type));
+  const roleFeedback = getPairRolePredictionFeedback();
   const resultWord = isCorrect && typeMatched ? '正确' : '需要复盘';
 
-  state.pairFeedback = `${resultWord}：${reaction.reacts ? `能反应，类型是${reaction.type}` : '通常不反应'}。${reaction.reason}${reaction.product ? ` 主要产物：${reaction.product}。` : ''}`;
+  state.pairFeedback = `${resultWord}：${reaction.reacts ? `能反应，类型是${reaction.type}` : '通常不反应'}。${roleFeedback} ${reaction.reason}${reaction.product ? ` 主要产物：${reaction.product}。` : ''}`;
   render();
+}
+
+function resetPairRolePredictions(): void {
+  state.pairRolePredictions = { left: null, right: null };
+}
+
+function getPairRolePredictionFeedback(): string {
+  const expectedLeft = getPairRoleForCompound(findCompoundById(state.pairFirstId));
+  const expectedRight = getPairRoleForCompound(findCompoundById(state.pairSecondId));
+  const selectedLeft = state.pairRolePredictions.left;
+  const selectedRight = state.pairRolePredictions.right;
+
+  if (selectedLeft === expectedLeft && selectedRight === expectedRight) {
+    return `角色判断正确：左侧${pairRoleLabel(expectedLeft)}，右侧${pairRoleLabel(expectedRight)}。`;
+  }
+
+  return `角色需要复盘：左侧更像${pairRoleLabel(expectedLeft)}，右侧更像${pairRoleLabel(expectedRight)}。`;
 }
 
 function newPuzzleChallenge(): void {

@@ -963,6 +963,22 @@ button.flow-node.final-node {
   gap: 10px;
 }
 
+.pair-role-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.pair-role-group {
+  display: grid;
+  gap: 8px;
+}
+
+.pair-role-group-label {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+}
+
 .prediction-feedback {
   margin: 0;
   padding: 12px;
