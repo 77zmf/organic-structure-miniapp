@@ -212,14 +212,24 @@ export function functionalGroupRoleLabel(groups: FunctionalGroup[]): string {
     ester: '酯基',
     phenol: '酚羟基',
     arene: '苯环',
-    ketone: '酮羰基'
+    ketone: '酮羰基',
+    haloalkane: '卤代烃',
+    ether: '醚键',
+    amine: '氨基',
+    amide: '酰胺基',
+    carboxylate: '羧酸盐'
   };
   const priority: FunctionalGroup[] = [
     'carboxylic-acid',
+    'carboxylate',
     'phenol',
     'aldehyde',
     'alcohol',
     'ester',
+    'amide',
+    'amine',
+    'haloalkane',
+    'ether',
     'ketone',
     'alkene',
     'alkyne',

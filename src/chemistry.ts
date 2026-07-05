@@ -8,7 +8,12 @@ export type FunctionalGroup =
   | 'ester'
   | 'phenol'
   | 'arene'
-  | 'ketone';
+  | 'ketone'
+  | 'haloalkane'
+  | 'ether'
+  | 'amine'
+  | 'amide'
+  | 'carboxylate';
 
 export interface Compound {
   id: string;
@@ -205,6 +210,246 @@ export const compounds: Compound[] = [
     functionalGroups: ['ketone'],
     level: 'advanced',
     summary: '含有羰基但不是醛基，通常不能发生银镜反应。'
+  },
+  {
+    id: '2-methylbutane',
+    name: '2-甲基丁烷',
+    formula: 'C5H12',
+    aliases: ['2-甲基丁烷', '异戊烷', '2-methylbutane', 'isopentane', 'ch3ch(ch3)ch2ch3'],
+    structureFormula: 'CH3CH(CH3)CH2CH3',
+    functionalGroups: ['alkane'],
+    level: 'basic',
+    summary: '支链烷烃，属于饱和烃，高中常见条件下主要体现取代反应而不是加成反应。'
+  },
+  {
+    id: '4-methyl-2-pentene',
+    name: '4-甲基-2-戊烯',
+    formula: 'C6H12',
+    aliases: ['4-甲基-2-戊烯', '4-methyl-2-pentene', 'ch3ch=chch(ch3)ch3'],
+    structureFormula: 'CH3CH=CHCH(CH3)CH3',
+    functionalGroups: ['alkene'],
+    level: 'intermediate',
+    summary: '含有碳碳双键，可发生加成反应，并能使酸性高锰酸钾溶液褪色。'
+  },
+  {
+    id: '2-butyne',
+    name: '2-丁炔',
+    formula: 'C4H6',
+    aliases: ['2-丁炔', '2-butyne', 'but-2-yne', 'ch3c≡cch3'],
+    structureFormula: 'CH3C≡CCH3',
+    functionalGroups: ['alkyne'],
+    level: 'intermediate',
+    summary: '含有碳碳三键，可发生加成反应，也可被强氧化剂氧化。'
+  },
+  {
+    id: 'toluene',
+    name: '甲苯',
+    formula: 'C7H8',
+    aliases: ['甲苯', 'toluene', 'c6h5ch3'],
+    structureFormula: 'C6H5CH3',
+    functionalGroups: ['arene'],
+    level: 'intermediate',
+    summary: '苯环连有甲基，侧链可被酸性高锰酸钾氧化为苯甲酸。'
+  },
+  {
+    id: 'naphthalene',
+    name: '萘',
+    formula: 'C10H8',
+    aliases: ['萘', 'naphthalene', 'c10h8'],
+    structureFormula: 'C10H8',
+    functionalGroups: ['arene'],
+    level: 'advanced',
+    summary: '稠环芳香烃，含两个稠合苯环，体现芳香烃的稳定性和取代反应特征。'
+  },
+  {
+    id: 'iodomethane',
+    name: '碘甲烷',
+    formula: 'CH3I',
+    aliases: ['碘甲烷', 'iodomethane', 'methyl iodide', 'ch3i'],
+    structureFormula: 'CH3I',
+    functionalGroups: ['haloalkane'],
+    level: 'intermediate',
+    summary: '卤代烃，碳卤键可在碱性水溶液中发生水解生成醇。'
+  },
+  {
+    id: 'bromoethane',
+    name: '溴乙烷',
+    formula: 'C2H5Br',
+    aliases: ['溴乙烷', 'bromoethane', 'ethyl bromide', 'ch3ch2br'],
+    structureFormula: 'CH3CH2Br',
+    functionalGroups: ['haloalkane'],
+    level: 'intermediate',
+    summary: '卤代烃，可在 NaOH 水溶液中发生水解生成乙醇。'
+  },
+  {
+    id: 'glycerol',
+    name: '丙三醇',
+    formula: 'C3H8O3',
+    aliases: ['丙三醇', '甘油', 'glycerol', 'propane-1,2,3-triol', 'hoch2chohch2oh'],
+    structureFormula: 'HOCH2CHOHCH2OH',
+    functionalGroups: ['alcohol'],
+    level: 'intermediate',
+    summary: '多元醇，含三个醇羟基，可与钠反应放出氢气。'
+  },
+  {
+    id: 'diethyl-ether',
+    name: '乙醚',
+    formula: 'C4H10O',
+    aliases: ['乙醚', 'diethyl ether', 'ethoxyethane', 'ch3ch2och2ch3'],
+    structureFormula: 'CH3CH2OCH2CH3',
+    functionalGroups: ['ether'],
+    level: 'intermediate',
+    summary: '含醚键，不含 O-H 键，通常不能与金属钠放出氢气。'
+  },
+  {
+    id: 'anisole',
+    name: '苯甲醚',
+    formula: 'C7H8O',
+    aliases: ['苯甲醚', '茴香醚', 'anisole', 'methoxybenzene', 'c6h5och3'],
+    structureFormula: 'C6H5OCH3',
+    functionalGroups: ['arene', 'ether'],
+    level: 'advanced',
+    summary: '芳香醚，含苯环和醚键；与苯甲醇、苯酚可构成 C7H8O 的官能团异构辨析。'
+  },
+  {
+    id: 'naphthol',
+    name: '萘酚',
+    formula: 'C10H8O',
+    aliases: ['萘酚', 'naphthol', 'c10h7oh'],
+    structureFormula: 'C10H7OH',
+    functionalGroups: ['phenol', 'arene'],
+    level: 'advanced',
+    summary: '稠环芳香酚，具有酚羟基性质，可与三氯化铁显色，也可发生芳环取代。'
+  },
+  {
+    id: 'cyclohexanone',
+    name: '环己酮',
+    formula: 'C6H10O',
+    aliases: ['环己酮', 'cyclohexanone', 'c6h10o'],
+    structureFormula: 'C6H10O',
+    functionalGroups: ['ketone'],
+    level: 'advanced',
+    summary: '环状酮，含酮羰基，通常不能发生银镜反应。'
+  },
+  {
+    id: 'oxalic-acid',
+    name: '乙二酸',
+    formula: 'C2H2O4',
+    aliases: ['乙二酸', '草酸', 'oxalic acid', 'hooccooh'],
+    structureFormula: 'HOOCCOOH',
+    functionalGroups: ['carboxylic-acid'],
+    level: 'intermediate',
+    summary: '二元羧酸，具有羧酸酸性，可与碳酸氢钠反应放出二氧化碳。'
+  },
+  {
+    id: 'tristearin',
+    name: '硬脂酸甘油酯',
+    formula: 'C57H110O6',
+    aliases: ['硬脂酸甘油酯', '三硬脂酸甘油酯', 'tristearin', 'glyceryl tristearate'],
+    structureFormula: 'C3H5(OOC(CH2)16CH3)3',
+    functionalGroups: ['ester'],
+    level: 'advanced',
+    summary: '油脂类三酯，含多个酯基，可在碱性条件下水解。'
+  },
+  {
+    id: 'aniline',
+    name: '苯胺',
+    formula: 'C6H7N',
+    aliases: ['苯胺', 'aniline', 'c6h5nh2'],
+    structureFormula: 'C6H5NH2',
+    functionalGroups: ['arene', 'amine'],
+    level: 'advanced',
+    summary: '芳香胺，氨基连在苯环上，使苯环更易发生取代反应。'
+  },
+  {
+    id: 'ethane-1-2-diamine',
+    name: '1,2-乙二胺',
+    formula: 'C2H8N2',
+    aliases: ['1,2-乙二胺', '乙二胺', 'ethane-1,2-diamine', 'ethylenediamine', 'h2nch2ch2nh2'],
+    structureFormula: 'H2NCH2CH2NH2',
+    functionalGroups: ['amine'],
+    level: 'advanced',
+    summary: '二元胺，含两个氨基，可用于认识胺类官能团。'
+  },
+  {
+    id: 'acetamide',
+    name: '乙酰胺',
+    formula: 'C2H5NO',
+    aliases: ['乙酰胺', 'acetamide', 'ch3conh2'],
+    structureFormula: 'CH3CONH2',
+    functionalGroups: ['amide'],
+    level: 'advanced',
+    summary: '含酰胺基，可在较强酸性或碱性、加热条件下水解。'
+  },
+  {
+    id: 'urea',
+    name: '碳酰胺',
+    formula: 'CH4N2O',
+    aliases: ['碳酰胺', '尿素', 'urea', 'h2nconh2'],
+    structureFormula: 'H2NCONH2',
+    functionalGroups: ['amide'],
+    level: 'intermediate',
+    summary: '含酰胺结构，是高中教材常见含氮有机物示例。'
+  },
+  {
+    id: 'benzoic-acid',
+    name: '苯甲酸',
+    formula: 'C7H6O2',
+    aliases: ['苯甲酸', 'benzoic acid', 'c6h5cooh'],
+    structureFormula: 'C6H5COOH',
+    functionalGroups: ['arene', 'carboxylic-acid'],
+    level: 'advanced',
+    summary: '芳香羧酸，可由甲苯侧链氧化得到，也可与醇发生酯化。'
+  },
+  {
+    id: 'benzyl-chloride',
+    name: '苄氯',
+    formula: 'C7H7Cl',
+    aliases: ['苄氯', '氯化苄', 'benzyl chloride', 'c6h5ch2cl'],
+    structureFormula: 'C6H5CH2Cl',
+    functionalGroups: ['arene', 'haloalkane'],
+    level: 'advanced',
+    summary: '苄位卤代烃，可由甲苯在光照下侧链氯代得到，并可水解为苯甲醇。'
+  },
+  {
+    id: 'benzyl-alcohol',
+    name: '苯甲醇',
+    formula: 'C7H8O',
+    aliases: ['苯甲醇', 'benzyl alcohol', 'c6h5ch2oh'],
+    structureFormula: 'C6H5CH2OH',
+    functionalGroups: ['arene', 'alcohol'],
+    level: 'advanced',
+    summary: '芳香醇，可由苄氯水解得到，也可与苯甲酸发生酯化生成苯甲酸苄酯。'
+  },
+  {
+    id: 'benzaldehyde',
+    name: '苯甲醛',
+    formula: 'C7H6O',
+    aliases: ['苯甲醛', 'benzaldehyde', 'c6h5cho'],
+    structureFormula: 'C6H5CHO',
+    functionalGroups: ['arene', 'aldehyde'],
+    level: 'advanced',
+    summary: '芳香醛，含醛基，可被氧化为苯甲酸，也可被还原为苯甲醇。'
+  },
+  {
+    id: 'benzyl-benzoate',
+    name: '苯甲酸苄酯',
+    formula: 'C14H12O2',
+    aliases: ['苯甲酸苄酯', 'benzyl benzoate', 'c6h5cooch2c6h5'],
+    structureFormula: 'C6H5COOCH2C6H5',
+    functionalGroups: ['arene', 'ester'],
+    level: 'advanced',
+    summary: '芳香酯，可由苯甲酸和苯甲醇在浓硫酸、加热条件下酯化得到。'
+  },
+  {
+    id: 'sodium-3-hydroxy-3-phenylpropanoate',
+    name: '3-羟基-3-苯基丙酸钠',
+    formula: 'C9H9NaO3',
+    aliases: ['3-羟基-3-苯基丙酸钠', 'β-羟基-β-苯基丙酸钠', 'sodium 3-hydroxy-3-phenylpropanoate'],
+    structureFormula: 'HOCH(C6H5)CH2COONa',
+    functionalGroups: ['arene', 'alcohol', 'carboxylate'],
+    level: 'advanced',
+    summary: '含苯环、醇羟基和羧酸盐结构，可作为综合题中官能团识别与盐类结构分析素材。'
   }
 ];
 
@@ -355,6 +600,53 @@ export const formulaPuzzles: FormulaPuzzle[] = [
       }
     ],
     examFocus: ['酮羰基', '醛酮鉴别', '银镜反应排除']
+  },
+  {
+    id: 'puzzle-benzyl-alcohol',
+    formula: 'C7H8O',
+    targetCompoundId: 'benzyl-alcohol',
+    openingHint: '同分异构体可能是苯甲醇、苯酚或苯甲醚，可先问是否显酚羟基性质。',
+    possibleStructures: ['苯甲醇', '苯酚', '苯甲醚'],
+    difficulty: '高考',
+    evidenceCards: [
+      {
+        title: '同分异构体筛选',
+        detail: 'C7H8O 可对应芳香醇、酚或芳香醚。',
+        inference: '需要用 FeCl3 显色、金属钠反应和氧化信息区分类别。'
+      },
+      {
+        title: '官能团检验',
+        detail: '不与 FeCl3 显紫色，但可与金属钠反应放出 H2。',
+        inference: '支持醇羟基而不是酚羟基或醚键。'
+      },
+      {
+        title: '转化关系',
+        detail: '可由苄氯水解得到，也可被氧化为苯甲酸。',
+        inference: '说明羟基位于苄位碳上。'
+      }
+    ],
+    examFocus: ['C7H8O 同分异构体', '苯甲醇', '苯酚与芳香醚鉴别']
+  },
+  {
+    id: 'puzzle-benzyl-benzoate',
+    formula: 'C14H12O2',
+    targetCompoundId: 'benzyl-benzoate',
+    openingHint: '可从甲苯侧链氧化、苄氯水解和羧酸酯化三步合成路线反推结构。',
+    possibleStructures: ['苯甲酸苄酯'],
+    difficulty: '高考',
+    evidenceCards: [
+      {
+        title: '路线拆解',
+        detail: '甲苯经酸性 KMnO4 可生成苯甲酸，经 Cl2/hv 后水解可生成苯甲醇。',
+        inference: '同一原料可分别提供羧基端和苄醇端。'
+      },
+      {
+        title: '官能团组合',
+        detail: '苯甲酸与苯甲醇在浓硫酸、加热条件下发生酯化。',
+        inference: '目标物含芳香酯基，结构可写为 C6H5COOCH2C6H5。'
+      }
+    ],
+    examFocus: ['甲苯侧链氧化', '苄氯水解', '苯甲酸苄酯']
   }
 ];
 
@@ -376,7 +668,7 @@ function parseFormulaCounts(formula: string): FormulaCounts {
     if (element === 'C') counts.carbon += count;
     if (element === 'H') counts.hydrogen += count;
     if (element === 'N') counts.nitrogen += count;
-    if (element === 'F' || element === 'Cl' || element === 'Br' || element === 'I') counts.halogen += count;
+    if (element === 'F' || element === 'Cl' || element === 'Br' || element === 'I' || element === 'Na') counts.halogen += count;
   }
 
   return counts;
@@ -435,6 +727,18 @@ const pairReactionRules: Array<{
   result: PairReactionResult;
 }> = [
   {
+    a: 'carboxylic-acid',
+    b: 'alcohol',
+    matches: (first, second) => matchesCompoundPair(first, second, 'benzoic-acid', 'benzyl-alcohol'),
+    result: {
+      reacts: true,
+      type: '酯化反应',
+      reason: '苯甲酸的羧基与苯甲醇的醇羟基在浓硫酸、加热条件下脱水成酯。',
+      evidence: '生成芳香酯。',
+      product: '苯甲酸苄酯'
+    }
+  },
+  {
     a: 'alcohol',
     b: 'carboxylic-acid',
     result: {
@@ -479,13 +783,20 @@ export function getReagentReaction(compoundOrId: Compound | string, reagentId: s
   const compound = typeof compoundOrId === 'string' ? findCompoundById(compoundOrId) : compoundOrId;
   findReagentById(reagentId);
 
-  return (
-    reagentReactionTable[compound.id]?.[reagentId] ??
-    negative(
-      '不反应',
-      `${compound.name}在高中常见条件下没有能与该试剂发生典型反应的官能团。`,
-      '通常无明显现象。'
-    )
+  const specificReaction = reagentReactionTable[compound.id]?.[reagentId];
+  if (specificReaction) {
+    return specificReaction;
+  }
+
+  const functionalGroupReaction = getFunctionalGroupReagentReaction(compound, reagentId);
+  if (functionalGroupReaction) {
+    return functionalGroupReaction;
+  }
+
+  return negative(
+    '不反应',
+    `${compound.name}在高中常见条件下没有能与该试剂发生典型反应的官能团。`,
+    '通常无明显现象。'
   );
 }
 
@@ -611,6 +922,96 @@ function positive(type: string, reason: string, evidence: string, equation?: str
 
 function negative(type: string, reason: string, evidence: string): ReactionResult {
   return { reacts: false, type, reason, evidence };
+}
+
+function getFunctionalGroupReagentReaction(compound: Compound, reagentId: string): ReactionResult | null {
+  if (compound.id === 'toluene' && reagentId === 'acidic-kmno4') {
+    return positive('氧化反应', '甲苯的苄位甲基可被酸性高锰酸钾氧化为羧基。', '紫色褪去，生成苯甲酸。');
+  }
+
+  if (compound.id === 'aniline' && reagentId === 'bromine-water') {
+    return positive('取代反应', '氨基使苯环邻对位活化，能与溴水发生取代。', '溴水褪色并生成白色沉淀。');
+  }
+
+  if (compound.functionalGroups.includes('alkene')) {
+    if (reagentId === 'bromine-ccl4') {
+      return positive('加成反应', '含有碳碳双键，π 键易断裂并与 Br2 加成。', '溴的红棕色褪去。');
+    }
+    if (reagentId === 'bromine-water') {
+      return positive('加成反应', '含有碳碳双键，可与溴发生加成。', '溴水褪色。');
+    }
+    if (reagentId === 'acidic-kmno4') {
+      return positive('氧化反应', '含有碳碳双键，可被酸性高锰酸钾氧化。', '紫色褪去。');
+    }
+  }
+
+  if (compound.functionalGroups.includes('alkyne')) {
+    if (reagentId === 'bromine-ccl4' || reagentId === 'bromine-water') {
+      return positive('加成反应', '含有碳碳三键，可连续发生加成反应。', '溴的颜色褪去。');
+    }
+    if (reagentId === 'acidic-kmno4') {
+      return positive('氧化反应', '碳碳三键可被酸性高锰酸钾氧化。', '紫色褪去。');
+    }
+  }
+
+  if (compound.functionalGroups.includes('phenol')) {
+    if (reagentId === 'sodium') {
+      return positive('置换反应', '含有酚羟基，能与钠反应。', '产生 H2。');
+    }
+    if (reagentId === 'sodium-hydroxide') {
+      return positive('酸碱反应', '酚羟基具有弱酸性，可与 NaOH 生成酚盐。', '形成可溶性盐。');
+    }
+    if (reagentId === 'bromine-water') {
+      return positive('取代反应', '酚羟基使芳环邻对位活化。', '溴水褪色并可能生成浅色沉淀。');
+    }
+    if (reagentId === 'ferric-chloride') {
+      return positive('显色反应', '酚羟基可与 Fe3+ 形成显色络合物。', '溶液显紫色或发生特征显色。');
+    }
+  }
+
+  if (compound.functionalGroups.includes('aldehyde')) {
+    if (reagentId === 'tollens') {
+      return positive('氧化反应', '含有醛基，能被银氨溶液氧化。', '试管内壁出现银镜。');
+    }
+    if (reagentId === 'acidic-kmno4') {
+      return positive('氧化反应', '醛基还原性较强，容易被氧化为羧酸。', '紫色褪去。');
+    }
+  }
+
+  if (compound.functionalGroups.includes('carboxylic-acid')) {
+    if (reagentId === 'sodium') {
+      return positive('置换反应', '含有羧基，酸性氢可与钠反应。', '产生 H2。');
+    }
+    if (reagentId === 'sodium-bicarbonate') {
+      return positive('酸碱反应', '含有羧基，酸性强于碳酸。', '产生 CO2 气泡。');
+    }
+    if (reagentId === 'sodium-hydroxide') {
+      return positive('中和反应', '羧酸具有酸性，可与 NaOH 中和。', '生成羧酸盐和水。');
+    }
+  }
+
+  if (compound.functionalGroups.includes('alcohol')) {
+    if (reagentId === 'sodium') {
+      return positive('置换反应', '含有醇羟基，O-H 键可与钠反应。', '产生无色气体 H2。');
+    }
+    if (reagentId === 'acidic-kmno4') {
+      return positive('氧化反应', '醇羟基连接的碳上有氢时，可被强氧化剂氧化。', '酸性高锰酸钾紫色逐渐褪去。');
+    }
+  }
+
+  if (compound.functionalGroups.includes('ester') && reagentId === 'sodium-hydroxide') {
+    return positive('水解反应', '含有酯基，在碱性条件下可水解。', '生成相应羧酸盐和醇。');
+  }
+
+  if (compound.functionalGroups.includes('haloalkane') && reagentId === 'sodium-hydroxide') {
+    return positive('水解反应', '卤代烃中的碳卤键可在 NaOH 水溶液中断裂。', '生成相应醇和卤化钠。');
+  }
+
+  if (compound.functionalGroups.includes('amide') && reagentId === 'sodium-hydroxide') {
+    return positive('水解反应', '酰胺基可在强碱并加热条件下水解。', '生成羧酸盐和含氮产物。');
+  }
+
+  return null;
 }
 
 function answerPuzzleEvidenceQuestion(

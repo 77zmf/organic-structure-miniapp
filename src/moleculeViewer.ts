@@ -60,6 +60,16 @@ export interface MoleculeViewer {
   dispose(): void;
 }
 
+export function getRendererParameters(
+  options: Pick<MoleculeViewerOptions, 'backgroundColor'> = {}
+): ConstructorParameters<typeof WebGLRenderer>[0] {
+  return {
+    antialias: true,
+    alpha: options.backgroundColor === null,
+    preserveDrawingBuffer: true
+  };
+}
+
 type BondCylinderCountInput = Pick<Partial<MoleculeBond>, 'order'> & {
   from?: number;
   to?: number;
@@ -123,7 +133,7 @@ export function createMoleculeViewer(
   let moleculeGroup = new Group();
   let disposed = false;
 
-  const renderer = new WebGLRenderer({ antialias: true, alpha: options.backgroundColor === null });
+  const renderer = new WebGLRenderer(getRendererParameters(options));
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, options.maxPixelRatio ?? 2));
 
   const scene = new Scene();

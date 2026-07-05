@@ -1181,7 +1181,12 @@ function functionalGroupLabels(compound: Compound): string[] {
     ester: '酯基',
     phenol: '酚羟基',
     arene: '苯环',
-    ketone: '酮羰基'
+    ketone: '酮羰基',
+    haloalkane: '卤代烃',
+    ether: '醚键',
+    amine: '氨基',
+    amide: '酰胺基',
+    carboxylate: '羧酸盐'
   };
 
   return compound.functionalGroups.map((group) => labels[group]);

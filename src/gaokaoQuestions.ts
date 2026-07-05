@@ -152,5 +152,32 @@ export const gaokaoQuestions: GaokaoQuestion[] = [
     examFocus: ['苯环', '取代反应', '加成反应辨析'],
     task: '解释苯不直接使溴的四氯化碳溶液褪色，但在催化剂条件下可发生取代反应。',
     publicClues: ['不饱和度为 4', '常温下不表现普通烯烃加成性质', '可发生苯环取代']
+  },
+  {
+    id: 'gk-aromatic-c7h8o-isomers',
+    puzzleId: 'puzzle-benzyl-alcohol',
+    title: 'C7H8O 芳香含氧物的同分异构筛选',
+    formula: 'C7H8O',
+    examFocus: ['C7H8O 同分异构体', '苯甲醇', '苯酚与芳香醚鉴别'],
+    task: '结合 FeCl3 显色、金属钠反应和氧化信息，在苯甲醇、苯酚、苯甲醚之间筛选结构。',
+    publicClues: ['含苯环', '不与 FeCl3 显紫色', '可与金属钠放出 H2']
+  },
+  {
+    id: 'gk-toluene-benzyl-benzoate-route',
+    puzzleId: 'puzzle-benzyl-benzoate',
+    title: '甲苯制备苯甲酸苄酯的路线判断',
+    formula: 'C14H12O2',
+    examFocus: ['甲苯侧链氧化', '苄氯水解', '苯甲酸苄酯'],
+    task: '从甲苯出发，比较侧链氧化、光照氯代、水解和酯化的先后关系，判断目标酯结构。',
+    publicClues: ['KMnO4/H+ 可把甲基氧化为羧基', 'Cl2/hv 可发生侧链氯代', '苯甲酸与苯甲醇可酯化']
+  },
+  {
+    id: 'gk-benzyl-chloride-hydrolysis',
+    puzzleId: 'puzzle-benzyl-alcohol',
+    title: '苄氯水解与苄醇生成',
+    formula: 'C7H8O',
+    examFocus: ['苄氯水解', '卤代烃水解', '苄位转化'],
+    task: '判断苄氯在 NaOH 水溶液中转化为苯甲醇的官能团变化，并说明为何是取代水解。',
+    publicClues: ['苄位含 C-Cl 键', 'NaOH/H2O 条件', '产物能与金属钠反应']
   }
 ];
