@@ -27,6 +27,8 @@ describe('gaokao question bank', () => {
       expect(question.task.trim()).not.toBe('');
       expect(question.examFocus.length).toBeGreaterThanOrEqual(2);
       expect(question.publicClues.length).toBeGreaterThanOrEqual(1);
+      expect(question.examFocus.every((item) => item.trim().length > 0)).toBe(true);
+      expect(question.publicClues.every((item) => item.trim().length > 0)).toBe(true);
     }
   });
 
