@@ -651,6 +651,9 @@ function submitGuess(): void {
   if (result.correct) {
     state.puzzleUnlocked = true;
     state.puzzleUnlockedCompoundId = result.compound.id;
+  } else {
+    state.puzzleUnlocked = false;
+    state.puzzleUnlockedCompoundId = null;
   }
   render();
 }
