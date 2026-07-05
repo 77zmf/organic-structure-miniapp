@@ -206,6 +206,10 @@ function modeButton(mode: Mode, label: string, detail: string, icon: string): st
 }
 
 function renderCuriosityBar(): string {
+  if (curiosityQuestions.length === 0) {
+    return '';
+  }
+
   const question = curiosityQuestions[state.curiosityQuestionIndex % curiosityQuestions.length];
   return `
     <section class="curiosity-bar" aria-label="今日追问">
@@ -1071,6 +1075,10 @@ function bindEvents(): void {
 }
 
 function nextCuriosityQuestion(): void {
+  if (curiosityQuestions.length === 0) {
+    return;
+  }
+
   state.curiosityQuestionIndex = (state.curiosityQuestionIndex + 1) % curiosityQuestions.length;
   render();
 }

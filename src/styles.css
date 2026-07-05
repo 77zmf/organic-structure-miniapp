@@ -218,9 +218,14 @@ button svg {
   box-shadow: var(--shadow-soft);
 }
 
+.curiosity-bar > div {
+  min-width: 0;
+}
+
 .curiosity-bar strong {
   display: block;
   line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
 .viewer-controls {

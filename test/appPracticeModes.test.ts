@@ -23,6 +23,7 @@ vi.mock('lucide', () => ({
 beforeEach(() => {
   vi.resetModules();
   vi.clearAllMocks();
+  vi.doUnmock('../src/curiosity');
 });
 
 describe('app reagent practice modes', () => {
@@ -111,6 +112,33 @@ describe('app curiosity bar', () => {
     expect(root.innerHTML).toContain('今日追问');
     expect(root.innerHTML).toContain('data-action="next-curiosity-question"');
   });
+
+  test('cycles to the next curiosity question when requested', async () => {
+    const nextQuestionButton = createActionButton('next-curiosity-question');
+    const root = createRoot({ actionButtons: [nextQuestionButton.button] });
+
+    await importApp(root);
+
+    expect(root.innerHTML).toContain('为什么乙烯能使溴的四氯化碳溶液褪色，而苯通常不能？');
+
+    nextQuestionButton.click();
+
+    expect(root.innerHTML).not.toContain('为什么乙烯能使溴的四氯化碳溶液褪色，而苯通常不能？');
+    expect(root.innerHTML).toContain('同样含氧，为什么有的物质能与钠反应，有的不能？');
+  });
+
+  test('omits the curiosity bar when no questions are available', async () => {
+    vi.doMock('../src/curiosity', () => ({
+      curiosityQuestions: []
+    }));
+    const nextQuestionButton = createActionButton('next-curiosity-question');
+    const root = createRoot({ actionButtons: [nextQuestionButton.button] });
+
+    await importApp(root);
+
+    expect(root.innerHTML).not.toContain('今日追问');
+    expect(() => nextQuestionButton.click()).not.toThrow();
+  });
 });
 
 async function importApp(root: HTMLDivElement): Promise<void> {
@@ -130,6 +158,7 @@ async function importApp(root: HTMLDivElement): Promise<void> {
 
 interface FakeRootOptions {
   modeButtons?: HTMLButtonElement[];
+  actionButtons?: HTMLButtonElement[];
 }
 
 function createRoot(options: FakeRootOptions = {}): HTMLDivElement {
@@ -138,6 +167,9 @@ function createRoot(options: FakeRootOptions = {}): HTMLDivElement {
     querySelectorAll: vi.fn((selector: string) => {
       if (selector === '[data-mode]') {
         return options.modeButtons ?? [];
+      }
+      if (selector === '[data-action]') {
+        return options.actionButtons ?? [];
       }
       return [];
     })
@@ -152,6 +184,22 @@ function createModeButton(mode: string): {
   return {
     button: {
       dataset: { mode },
+      addEventListener: vi.fn((eventName: string, callback: () => void) => {
+        if (eventName === 'click') listener = callback;
+      })
+    } as unknown as HTMLButtonElement,
+    click: () => listener?.()
+  };
+}
+
+function createActionButton(action: string): {
+  button: HTMLButtonElement;
+  click: () => void;
+} {
+  let listener: (() => void) | null = null;
+  return {
+    button: {
+      dataset: { action },
       addEventListener: vi.fn((eventName: string, callback: () => void) => {
         if (eventName === 'click') listener = callback;
       })
