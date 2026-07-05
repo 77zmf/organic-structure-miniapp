@@ -124,6 +124,13 @@ export function getUnsaturationPredictionFeedback(
     return `先对 ${formula} 可能隐藏的结构做一个预测，再用不饱和度验证。`;
   }
 
+  const expectedPredictions = getLikelyUnsaturationPredictions(index);
+  const hasAlignedPrediction = predictions.some((prediction) => expectedPredictions.includes(prediction));
+
+  if (!hasAlignedPrediction) {
+    return `不饱和度为 ${Math.max(index, 0)}，你的预测需要复盘；公式能提示可能方向，但不能只凭公式定结构，仍需实验验证。`;
+  }
+
   if (index <= 0) {
     return `不饱和度为 0，可能支持“都不明显”的预测；若选择了双键、三键、苯环或羰基，仍需实验验证并优先复盘。`;
   }
@@ -137,6 +144,14 @@ export function getUnsaturationPredictionFeedback(
   }
 
   return `不饱和度为 ${index}，可能支持苯环或多个不饱和单元的预测，但仍需实验验证，不能只凭公式定结构。`;
+}
+
+function getLikelyUnsaturationPredictions(index: number): UnsaturationPredictionId[] {
+  if (index <= 0) return ['none'];
+  if (index === 1) return ['carbon-double-bond', 'carbonyl', 'ring'];
+  if (index === 2) return ['carbon-triple-bond', 'carbon-double-bond', 'carbonyl', 'ring'];
+  if (index >= 4) return ['benzene-ring', 'carbon-triple-bond', 'carbon-double-bond', 'carbonyl', 'ring'];
+  return ['carbon-triple-bond', 'carbon-double-bond', 'carbonyl', 'ring'];
 }
 
 export function getExpectedPhenomenon(reaction: ReactionResult): PhenomenonId {
@@ -163,16 +178,43 @@ export function pairRoleLabel(role: PairRoleId): string {
 }
 
 export function functionalGroupRoleLabel(groups: FunctionalGroup[]): string {
-  if (groups.includes('carboxylic-acid')) return '羧基';
-  if (groups.includes('phenol')) return '酚羟基';
-  if (groups.includes('aldehyde')) return '醛基';
-  if (groups.includes('alcohol')) return '醇羟基';
-  if (groups.includes('arene')) return '苯环';
+  const labels: Record<FunctionalGroup, string> = {
+    alkane: '烷烃',
+    alkene: '碳碳双键',
+    alkyne: '碳碳三键',
+    alcohol: '醇羟基',
+    aldehyde: '醛基',
+    'carboxylic-acid': '羧基',
+    ester: '酯基',
+    phenol: '酚羟基',
+    arene: '苯环',
+    ketone: '酮羰基'
+  };
+  const priority: FunctionalGroup[] = [
+    'carboxylic-acid',
+    'phenol',
+    'aldehyde',
+    'alcohol',
+    'ester',
+    'ketone',
+    'alkene',
+    'alkyne',
+    'arene',
+    'alkane'
+  ];
+  const group = priority.find((item) => groups.includes(item));
+  if (group) return labels[group];
   return '没有明显配对角色';
 }
 
 export function createEvidenceNoteFromAgentReply(reply: AgentReply): EvidenceNote {
-  const kind: EvidenceNote['kind'] = reply.answer.startsWith('不能') ? 'excluded' : 'verified';
+  let kind: EvidenceNote['kind'] = 'verified';
+  if (reply.answer.startsWith('不能')) {
+    kind = 'excluded';
+  } else if (reply.hintLevel === 'guardrail' || reply.matchedTopic === 'fallback') {
+    kind = 'guess';
+  }
+
   return {
     kind,
     text: `${reply.matchedTopic}：${reply.answer}`
