@@ -218,6 +218,13 @@ export const formulaPuzzles: FormulaPuzzle[] = [
     targetCompoundId: 'phenol',
     openingHint: '可先问三氯化铁显色或溴水反应。',
     possibleStructures: ['苯酚', '苯甲醇', '苯甲醚']
+  },
+  {
+    id: 'puzzle-formaldehyde',
+    formula: 'CH2O',
+    targetCompoundId: 'formaldehyde',
+    openingHint: '可先判断是否含醛基，银镜反应很关键。',
+    possibleStructures: ['甲醛']
   }
 ];
 
@@ -482,11 +489,24 @@ function matchReagent(normalized: string): string | null {
 }
 
 function matchOtherCompound(normalized: string, hiddenCompound: Compound): Compound | null {
+  const matches: Array<{ compound: Compound; aliasLength: number }> = [];
+
+  for (const compound of compounds) {
+    if (compound.id === hiddenCompound.id) continue;
+
+    for (const alias of compound.aliases) {
+      const normalizedAlias = normalize(alias);
+      if (normalized.includes(normalizedAlias)) {
+        matches.push({ compound, aliasLength: normalizedAlias.length });
+      }
+    }
+  }
+
   return (
-    compounds.find((compound) => {
-      if (compound.id === hiddenCompound.id) return false;
-      return compound.aliases.some((alias) => normalized.includes(normalize(alias)));
-    }) ?? null
+    matches.reduce<{ compound: Compound; aliasLength: number } | null>((best, match) => {
+      if (!best || match.aliasLength > best.aliasLength) return match;
+      return best;
+    }, null)?.compound ?? null
   );
 }
 

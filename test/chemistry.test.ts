@@ -90,6 +90,24 @@ describe('formula puzzle agent', () => {
     expect(reply.hintLevel).toBe('medium');
   });
 
+  test('agent prefers phenol over benzene when organic-pair aliases overlap', () => {
+    const reply = askAgent('puzzle-formaldehyde', '它能和苯酚发生反应吗？');
+
+    expect(reply.answer).toContain('能');
+    expect(reply.answer).toContain('缩聚反应');
+    expect(reply.answer).not.toContain('甲醛');
+    expect(reply.answer).not.toContain('HCHO');
+    expect(reply.matchedTopic).toBe('苯酚');
+    expect(reply.hintLevel).toBe('strong');
+  });
+
+  test('agent prefers ethyl acetate over acetic acid when organic-pair aliases overlap', () => {
+    const reply = askAgent('puzzle-ethanol', '它能和乙酸乙酯发生反应吗？');
+
+    expect(reply.answer).not.toContain('乙醇');
+    expect(reply.matchedTopic).toBe('乙酸乙酯');
+  });
+
   test('structure guesses accept Chinese names and aliases', () => {
     expect(answerFormulaPuzzle('puzzle-ethanol', '乙醇').correct).toBe(true);
     expect(answerFormulaPuzzle('puzzle-ethanol', '二甲醚').correct).toBe(false);
