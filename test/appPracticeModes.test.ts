@@ -411,6 +411,84 @@ describe('app chemistry notation and advanced puzzle clues', () => {
     expect(root.innerHTML).not.toContain('教材谱图线索');
     expect(root.innerHTML).not.toContain('已给出分子式');
   });
+
+  test('renders gaokao bank, locked 3d reveal, and evidence board in puzzle mode', async () => {
+    const puzzleTab = createModeButton('puzzle');
+    const root = createRoot({ modeButtons: [puzzleTab.button] });
+
+    await importApp(root);
+    puzzleTab.click();
+
+    expect(root.innerHTML).toContain('高考题库');
+    expect(root.innerHTML).toContain('3D 模型');
+    expect(root.innerHTML).toContain('答对后揭晓三维结构');
+    expect(root.innerHTML).toContain('证据板');
+    expect(root.innerHTML).toContain('已验证性质');
+    expect(root.innerHTML).toContain('排除方向');
+    expect(root.innerHTML).toContain('当前猜想');
+    expect(root.innerHTML).toContain('C<sub>4</sub>H<sub>10</sub>O');
+    expect(root.innerHTML).not.toContain('quick-question');
+  });
+
+  test('selects a gaokao question and updates the public formula puzzle', async () => {
+    const puzzleTab = createModeButton('puzzle');
+    const gaokaoQuestionInput = createInput('gaokao-question', 'gk-phenol-tests');
+    const root = createRoot({
+      modeButtons: [puzzleTab.button],
+      inputElements: [gaokaoQuestionInput.input]
+    });
+
+    await importApp(root);
+    puzzleTab.click();
+
+    expect(getSelectedGaokaoQuestionId(root.innerHTML)).toBe('gk-ir-nmr-butanol');
+
+    gaokaoQuestionInput.input.value = 'gk-phenol-tests';
+    gaokaoQuestionInput.inputEvent();
+
+    expect(getSelectedGaokaoQuestionId(root.innerHTML)).toBe('gk-phenol-tests');
+    expect(root.innerHTML).toContain('酚羟基与苯环活化');
+    expect(root.innerHTML).toContain('C<sub>6</sub>H<sub>6</sub>O');
+  });
+
+  test('random gaokao question picks a different question when possible', async () => {
+    const puzzleTab = createModeButton('puzzle');
+    const randomQuestion = createActionButton('random-gaokao-question');
+    const root = createRoot({
+      modeButtons: [puzzleTab.button],
+      actionButtons: [randomQuestion.button]
+    });
+
+    await importApp(root);
+    puzzleTab.click();
+
+    expect(getSelectedGaokaoQuestionId(root.innerHTML)).toBe('gk-ir-nmr-butanol');
+
+    randomQuestion.click();
+
+    expect(getSelectedGaokaoQuestionId(root.innerHTML)).not.toBe('gk-ir-nmr-butanol');
+  });
+
+  test('wrong structure guesses add a current-guess evidence note', async () => {
+    const puzzleTab = createModeButton('puzzle');
+    const guessInput = createInput('structure-guess', '乙醇');
+    const submitGuess = createActionButton('submit-guess');
+    const root = createRoot({
+      modeButtons: [puzzleTab.button],
+      actionButtons: [submitGuess.button],
+      inputElements: [guessInput.input]
+    });
+
+    await importApp(root);
+    puzzleTab.click();
+
+    guessInput.inputEvent();
+    submitGuess.click();
+
+    expect(root.innerHTML).toContain('当前猜想');
+    expect(root.innerHTML).toContain('已尝试：乙醇');
+    expect(root.innerHTML).toContain('还不对');
+  });
 });
 
 describe('app method and unsaturation pages', () => {
@@ -872,6 +950,14 @@ function matchHtmlAttribute(html: string, attribute: string): string {
     throw new Error(`Missing ${attribute} in rendered HTML`);
   }
   return match[1];
+}
+
+function getSelectedGaokaoQuestionId(html: string): string {
+  const selectedMatch = html.match(/<option value="([^"]+)" selected>/);
+  if (!selectedMatch) {
+    throw new Error('Missing selected gaokao question option');
+  }
+  return selectedMatch[1];
 }
 
 function createUnsaturationPredictionButton(unsaturationPrediction: string): {

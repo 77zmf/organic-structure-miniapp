@@ -18,6 +18,7 @@ import {
   type Compound,
   type FormulaPuzzle,
   type FunctionalGroup,
+  type AgentReply,
   answerFormulaPuzzle,
   askAgent,
   calculateUnsaturationIndex,
@@ -31,6 +32,7 @@ import {
   reagents
 } from './chemistry';
 import { formatChemicalFormula, formatChemistryText } from './formatChemistry';
+import { gaokaoQuestions, type GaokaoQuestion } from './gaokaoQuestions';
 import { getMoleculeModel, type DisplayMode, type MoleculeModel } from './moleculeModels';
 import { createMoleculeViewer, type MoleculeViewer } from './moleculeViewer';
 import { createRandomPairQuestion, selectPairCompound, type PairSide } from './pairPractice';
@@ -57,7 +59,9 @@ import {
   type PairRoleId,
   type PhenomenonId,
   type UnsaturationPredictionId,
-  unsaturationPredictionOptions
+  unsaturationPredictionOptions,
+  createEvidenceNoteFromAgentReply,
+  type EvidenceNote
 } from './curiosity';
 
 type Mode = 'method' | 'unsaturation' | 'reagent' | 'pair' | 'puzzle';
@@ -67,6 +71,11 @@ type PairRoleSide = 'left' | 'right';
 interface ChatMessage {
   role: 'student' | 'agent';
   text: string;
+}
+
+interface AgentAnswerResult {
+  answer: string;
+  evidenceNote?: EvidenceNote;
 }
 
 interface PairRolePredictions {
@@ -90,6 +99,8 @@ interface AppState {
   pairFeedback: string;
   pairRolePredictions: PairRolePredictions;
   puzzleId: string;
+  selectedGaokaoQuestionId: string;
+  evidenceNotes: EvidenceNote[];
   puzzleUnlocked: boolean;
   puzzleUnlockedCompoundId: string | null;
   unsaturationFormula: string;
@@ -111,7 +122,8 @@ interface AppState {
 const appRoot = getAppRoot();
 let chatRequestId = 0;
 const mountedMoleculeViewers: MoleculeViewer[] = [];
-const initialPuzzleUnlock = createPuzzleUnlockState('puzzle-butan-2-ol');
+const defaultGaokaoQuestion = getDefaultGaokaoQuestion();
+const initialPuzzleUnlock = createPuzzleUnlockState(defaultGaokaoQuestion.puzzleId);
 const challengeCompoundIds = compounds.map((compound) => compound.id);
 const challengeReagentIds = reagents.map((reagent) => reagent.id);
 const pairCompoundIds = compounds.map((compound) => compound.id);
@@ -136,6 +148,8 @@ const state: AppState = {
   pairFeedback: '',
   pairRolePredictions: { left: null, right: null },
   puzzleId: initialPuzzleUnlock.puzzleId,
+  selectedGaokaoQuestionId: defaultGaokaoQuestion.id,
+  evidenceNotes: [],
   puzzleUnlocked: initialPuzzleUnlock.unlocked,
   puzzleUnlockedCompoundId: initialPuzzleUnlock.unlockedCompoundId,
   unsaturationFormula: 'C6H6',
@@ -743,6 +757,7 @@ function renderPairRoleGroup(side: PairRoleSide, label: string): string {
 
 function renderPuzzleMode(): string {
   const puzzle = findPuzzleById(state.puzzleId);
+  const gaokaoQuestion = getSelectedGaokaoQuestion();
   const formattedFormula = formatChemicalFormula(puzzle.formula);
 
   return `
@@ -758,8 +773,12 @@ function renderPuzzleMode(): string {
             新题
           </button>
         </div>
+        ${renderGaokaoQuestionPanel(gaokaoQuestion)}
         <div class="formula-display chem-formula">${formattedFormula}</div>
-        ${renderPuzzleVisualization(puzzle)}
+        <div class="puzzle-public-grid">
+          ${renderPuzzleVisualization(puzzle)}
+          ${renderEvidenceBoard()}
+        </div>
         <div class="answer-strip">
           <label class="input-label" for="structure-guess">结构猜测</label>
           <div class="inline-form">
@@ -804,6 +823,43 @@ function renderPuzzleMode(): string {
           </button>
         </div>
       </section>
+    </section>
+  `;
+}
+
+function renderGaokaoQuestionPanel(question: GaokaoQuestion): string {
+  return `
+    <section class="gaokao-panel" aria-label="高考题库">
+      <div class="panel-title-row">
+        <div>
+          <p class="section-kicker">高考题库</p>
+          <h3>${escapeHtml(question.title)}</h3>
+        </div>
+        <button class="icon-text-button" data-action="random-gaokao-question" type="button">
+          <i data-lucide="shuffle" aria-hidden="true"></i>
+          随机题
+        </button>
+      </div>
+      <label class="select-control compact-select">
+        <span>选择高考题</span>
+        <select data-input="gaokao-question" aria-label="选择高考题">
+          ${gaokaoQuestions
+            .map(
+              (item) => `
+                <option value="${escapeHtml(item.id)}"${item.id === question.id ? ' selected' : ''}>
+                  ${escapeHtml(item.title)}
+                </option>
+              `
+            )
+            .join('')}
+        </select>
+      </label>
+      <dl class="gaokao-facts">
+        <div><dt>分子式</dt><dd class="chem-formula">${formatChemicalFormula(question.formula)}</dd></div>
+        <div><dt>考查重点</dt><dd>${question.examFocus.map((item) => escapeHtml(item)).join('、')}</dd></div>
+        <div><dt>任务</dt><dd>${formatChemistryText(question.task)}</dd></div>
+        <div><dt>公开线索</dt><dd>${question.publicClues.map((item) => formatChemistryText(item)).join('；')}</dd></div>
+      </dl>
     </section>
   `;
 }
@@ -1053,8 +1109,9 @@ function renderPuzzleVisualization(puzzle: FormulaPuzzle): string {
   if (!spec) {
     return `
       <section class="locked-visualization" aria-label="分子式推理锁定面板">
-        <span>分子式</span>
+        <span>3D 模型</span>
         <strong class="chem-formula">${formatChemicalFormula(puzzle.formula)}</strong>
+        <p>答对后揭晓三维结构</p>
       </section>
     `;
   }
@@ -1067,6 +1124,40 @@ function renderPuzzleVisualization(puzzle: FormulaPuzzle): string {
         <strong>${compound.name}</strong>
       </div>
       ${renderMoleculeViewerHost(compound.id, `${compound.name}三维结构`, 'puzzle-target')}
+    </section>
+  `;
+}
+
+function renderEvidenceBoard(): string {
+  const columns: Array<{ kind: EvidenceNote['kind']; title: string }> = [
+    { kind: 'verified', title: '已验证性质' },
+    { kind: 'excluded', title: '排除方向' },
+    { kind: 'guess', title: '当前猜想' }
+  ];
+
+  return `
+    <section class="evidence-board" aria-label="证据板">
+      <div class="evidence-board-title">
+        <p class="section-kicker">证据板</p>
+        <h3>证据板</h3>
+      </div>
+      <div class="evidence-column-grid">
+        ${columns
+          .map((column) => {
+            const notes = state.evidenceNotes.filter((note) => note.kind === column.kind);
+            return `
+              <article class="evidence-column">
+                <h4>${column.title}</h4>
+                ${
+                  notes.length
+                    ? `<ul>${notes.map((note) => `<li>${formatChemistryText(note.text)}</li>`).join('')}</ul>`
+                    : '<p>等待学生提问或提交猜想。</p>'
+                }
+              </article>
+            `;
+          })
+          .join('')}
+      </div>
     </section>
   `;
 }
@@ -1247,6 +1338,10 @@ function bindEvents(): void {
         render();
         return;
       }
+      if (kind === 'gaokao-question') {
+        setGaokaoQuestion(input.value);
+        return;
+      }
       if (kind === 'pair-type') state.pairTypeGuess = input.value;
       if (kind === 'chat') state.chatInput = input.value;
       if (kind === 'structure-guess') state.structureGuess = input.value;
@@ -1283,6 +1378,7 @@ function bindEvents(): void {
       if (action === 'new-pair') newPairChallenge();
       if (action === 'submit-pair') submitPairAnswer();
       if (action === 'new-puzzle') newPuzzleChallenge();
+      if (action === 'random-gaokao-question') randomGaokaoQuestion();
       if (action === 'send-chat') sendChat();
       if (action === 'submit-guess') submitGuess();
       if (action === 'check-proxy') checkProxyStatus();
@@ -1547,18 +1643,57 @@ function getPairRolePredictionFeedback(): string {
   return `角色需要复盘：左侧更像${pairRoleLabel(expectedLeft)}，右侧更像${pairRoleLabel(expectedRight)}。`;
 }
 
+function getDefaultGaokaoQuestion(): GaokaoQuestion {
+  const question = gaokaoQuestions.find((item) => item.id === 'gk-ir-nmr-butanol') ?? gaokaoQuestions[0];
+  if (!question) {
+    throw new Error('Gaokao question bank is empty');
+  }
+  return question;
+}
+
+function getSelectedGaokaoQuestion(): GaokaoQuestion {
+  return gaokaoQuestions.find((question) => question.id === state.selectedGaokaoQuestionId) ?? getDefaultGaokaoQuestion();
+}
+
+function findGaokaoQuestionById(questionId: string): GaokaoQuestion | null {
+  return gaokaoQuestions.find((question) => question.id === questionId) ?? null;
+}
+
+function findGaokaoQuestionForPuzzle(puzzleId: string): GaokaoQuestion | null {
+  return gaokaoQuestions.find((question) => question.puzzleId === puzzleId) ?? null;
+}
+
 function newPuzzleChallenge(): void {
-  const puzzle = pick(formulaPuzzles);
-  setPuzzle(puzzle);
+  randomGaokaoQuestion();
+}
+
+function setGaokaoQuestion(questionId: string): void {
+  const question = findGaokaoQuestionById(questionId);
+  if (!question) {
+    return;
+  }
+
+  setPuzzle(findPuzzleById(question.puzzleId), question.id);
   render();
 }
 
-function setPuzzle(puzzle: FormulaPuzzle): void {
+function randomGaokaoQuestion(): void {
+  const candidates = gaokaoQuestions.filter((question) => question.id !== state.selectedGaokaoQuestionId);
+  const question = pick(candidates.length > 0 ? candidates : gaokaoQuestions);
+  setGaokaoQuestion(question.id);
+}
+
+function setPuzzle(puzzle: FormulaPuzzle, selectedGaokaoQuestionId?: string): void {
   const unlockState = createPuzzleUnlockState(puzzle.id);
+  const matchingQuestion = selectedGaokaoQuestionId
+    ? findGaokaoQuestionById(selectedGaokaoQuestionId)
+    : findGaokaoQuestionForPuzzle(puzzle.id);
   chatRequestId += 1;
   state.puzzleId = unlockState.puzzleId;
+  state.selectedGaokaoQuestionId = matchingQuestion?.id ?? state.selectedGaokaoQuestionId;
   state.puzzleUnlocked = unlockState.unlocked;
   state.puzzleUnlockedCompoundId = unlockState.unlockedCompoundId;
+  state.evidenceNotes = [];
   state.chatInput = '';
   state.structureGuess = '';
   state.puzzleFeedback = '';
@@ -1586,13 +1721,16 @@ async function sendChat(): Promise<void> {
   state.chatPending = true;
   render();
 
-  const answer = await getAgentAnswer(text, history);
+  const answerResult = await getAgentAnswer(text, history);
   if (requestId !== chatRequestId || puzzleId !== state.puzzleId) {
     return;
   }
 
   state.chatPending = false;
-  state.chatMessages = [...state.chatMessages, { role: 'agent', text: answer }];
+  state.chatMessages = [...state.chatMessages, { role: 'agent', text: answerResult.answer }];
+  if (answerResult.evidenceNote) {
+    state.evidenceNotes = [...state.evidenceNotes, answerResult.evidenceNote];
+  }
   render();
 }
 
@@ -1616,6 +1754,9 @@ function submitGuess(): void {
   state.puzzleFeedback = result.message;
   state.puzzleUnlocked = unlockState.unlocked;
   state.puzzleUnlockedCompoundId = unlockState.unlockedCompoundId;
+  if (!result.correct) {
+    state.evidenceNotes = [...state.evidenceNotes, { kind: 'guess', text: `已尝试：${guess}` }];
+  }
   render();
 }
 
@@ -1708,10 +1849,17 @@ async function checkProxyStatus(): Promise<void> {
   }
 }
 
-async function getAgentAnswer(question: string, history: ChatMessage[]): Promise<string> {
+function createAgentAnswerResult(reply: AgentReply): AgentAnswerResult {
+  return {
+    answer: reply.answer,
+    evidenceNote: createEvidenceNoteFromAgentReply(reply)
+  };
+}
+
+async function getAgentAnswer(question: string, history: ChatMessage[]): Promise<AgentAnswerResult> {
   if (!state.proxyUrl) {
     state.proxyStatus = '';
-    return askAgent(state.puzzleId, question).answer;
+    return createAgentAnswerResult(askAgent(state.puzzleId, question));
   }
 
   try {
@@ -1736,11 +1884,11 @@ async function getAgentAnswer(question: string, history: ChatMessage[]): Promise
     }
 
     state.proxyStatus = data.provider === 'deepseek' ? 'DeepSeek 已回复。' : '已触发保护规则。';
-    return data.answer;
+    return { answer: data.answer };
   } catch (error) {
-    const fallback = askAgent(state.puzzleId, question).answer;
+    const fallback = askAgent(state.puzzleId, question);
     state.proxyStatus = `代理不可用，已回退到规则助手：${error instanceof Error ? error.message : '未知错误'}`;
-    return fallback;
+    return createAgentAnswerResult(fallback);
   }
 }
 

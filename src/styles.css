@@ -1105,6 +1105,77 @@ button.flow-node.final-node {
   text-align: center;
 }
 
+.gaokao-panel {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 16px;
+  border: 1px solid rgba(49, 95, 156, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(49, 95, 156, 0.08), transparent 10px),
+    var(--surface-muted);
+}
+
+.gaokao-panel .panel-title-row {
+  align-items: start;
+  margin-bottom: 0;
+}
+
+.gaokao-panel h3 {
+  color: var(--teal-dark);
+}
+
+.gaokao-panel .compact-select {
+  width: 100%;
+}
+
+.gaokao-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.gaokao-facts div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid rgba(215, 222, 216, 0.82);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.gaokao-facts div:nth-child(3),
+.gaokao-facts div:nth-child(4) {
+  grid-column: 1 / -1;
+}
+
+.gaokao-facts dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.gaokao-facts dd {
+  margin: 0;
+  font-weight: 800;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.puzzle-public-grid {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.puzzle-public-grid .locked-visualization,
+.puzzle-public-grid .puzzle-target-panel {
+  margin: 0;
+}
+
 .locked-visualization,
 .puzzle-target-panel {
   margin: 16px 0;
@@ -1115,6 +1186,7 @@ button.flow-node.final-node {
 
 .locked-visualization {
   display: grid;
+  gap: 10px;
   place-items: center;
   min-height: 280px;
   padding: 20px;
@@ -1146,6 +1218,72 @@ button.flow-node.final-node {
   margin: 0;
   color: var(--muted);
   line-height: 1.7;
+}
+
+.evidence-board {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(19, 123, 114, 0.2);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(19, 123, 114, 0.08), transparent 10px),
+    #fff;
+}
+
+.evidence-board-title {
+  display: grid;
+  gap: 3px;
+}
+
+.evidence-board-title h3 {
+  color: var(--teal-dark);
+  font-size: 18px;
+}
+
+.evidence-column-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 10px;
+}
+
+.evidence-column {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  min-height: 132px;
+  padding: 12px;
+  border: 1px solid rgba(215, 222, 216, 0.86);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.evidence-column h4 {
+  margin: 0;
+  color: var(--blue);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.evidence-column p,
+.evidence-column li {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.evidence-column p {
+  margin: 0;
+}
+
+.evidence-column ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 18px;
 }
 
 .puzzle-evidence {
@@ -1476,6 +1614,20 @@ button.flow-node.final-node {
 
   .evidence-card-grid {
     grid-template-columns: 1fr;
+  }
+
+  .gaokao-panel {
+    padding: 14px;
+  }
+
+  .gaokao-facts,
+  .evidence-column-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gaokao-facts div:nth-child(3),
+  .gaokao-facts div:nth-child(4) {
+    grid-column: auto;
   }
 
   .formula-display {
