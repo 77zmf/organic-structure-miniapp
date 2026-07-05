@@ -27,6 +27,7 @@ import {
   getReagentReaction,
   reagents
 } from './chemistry';
+import type { DisplayMode } from './moleculeModels';
 
 type Mode = 'reagent' | 'pair' | 'puzzle';
 type YesNo = 'yes' | 'no' | null;
@@ -48,6 +49,10 @@ interface AppState {
   pairTypeGuess: string;
   pairFeedback: string;
   puzzleId: string;
+  puzzleUnlocked: boolean;
+  puzzleUnlockedCompoundId: string | null;
+  viewerDisplayMode: DisplayMode;
+  highlightFunctionalGroup: boolean;
   proxyUrl: string;
   chatInput: string;
   chatMessages: ChatMessage[];
@@ -72,6 +77,10 @@ const state: AppState = {
   pairTypeGuess: '',
   pairFeedback: '',
   puzzleId: 'puzzle-ethanol',
+  puzzleUnlocked: false,
+  puzzleUnlockedCompoundId: null,
+  viewerDisplayMode: 'ball-stick',
+  highlightFunctionalGroup: true,
   proxyUrl: getInitialProxyUrl(),
   chatInput: '',
   chatMessages: [
@@ -586,6 +595,8 @@ function newPuzzleChallenge(): void {
 function setPuzzle(puzzle: FormulaPuzzle): void {
   chatRequestId += 1;
   state.puzzleId = puzzle.id;
+  state.puzzleUnlocked = false;
+  state.puzzleUnlockedCompoundId = null;
   state.chatInput = '';
   state.structureGuess = '';
   state.puzzleFeedback = '';
@@ -637,6 +648,10 @@ function submitGuess(): void {
 
   const result = answerFormulaPuzzle(state.puzzleId, guess);
   state.puzzleFeedback = result.message;
+  if (result.correct) {
+    state.puzzleUnlocked = true;
+    state.puzzleUnlockedCompoundId = result.compound.id;
+  }
   render();
 }
 
