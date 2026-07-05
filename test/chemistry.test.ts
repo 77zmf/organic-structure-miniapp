@@ -3,6 +3,7 @@ import {
   answerFormulaPuzzle,
   askAgent,
   findCompoundById,
+  findPuzzleById,
   getOrganicPairReaction,
   getReagentReaction
 } from '../src/chemistry';
@@ -51,12 +52,46 @@ describe('organic pair reactions', () => {
 });
 
 describe('formula puzzle agent', () => {
+  test('textbook-derived advanced puzzles include spectral evidence and gaokao focus', () => {
+    const butan2ol = findPuzzleById('puzzle-butan-2-ol');
+    const propan1ol = findPuzzleById('puzzle-propan-1-ol');
+
+    expect(butan2ol.difficulty).toBe('高考');
+    expect(butan2ol.evidenceCards?.some((card) => card.title.includes('红外'))).toBe(true);
+    expect(butan2ol.evidenceCards?.some((card) => card.title.includes('核磁'))).toBe(true);
+    expect(butan2ol.examFocus?.join('、')).toContain('同分异构体');
+    expect(propan1ol.evidenceCards?.some((card) => card.title.includes('质谱'))).toBe(true);
+    expect(propan1ol.examFocus?.join('、')).toContain('氢谱');
+  });
+
   test('agent answers reagent questions from the hidden compound properties', () => {
     const reply = askAgent('puzzle-acetic-acid', '它能和碳酸氢钠反应吗？');
 
     expect(reply.answer).toContain('能');
     expect(reply.answer).toContain('羧基');
     expect(reply.hintLevel).toBe('strong');
+  });
+
+  test('agent answers textbook NMR evidence without revealing the advanced target', () => {
+    const compound = findCompoundById('butan-2-ol');
+    const reply = askAgent('puzzle-butan-2-ol', '核磁共振氢谱有什么线索？');
+
+    expect(reply.answer).toContain('五组');
+    expect(reply.answer).toContain('1∶1∶2∶3∶3');
+    expect(reply.answer).not.toContain(compound.name);
+    expect(reply.answer).not.toContain(compound.structureFormula);
+    expect(reply.matchedTopic).toContain('核磁');
+  });
+
+  test('agent answers textbook IR evidence for alcohol isomer screening', () => {
+    const compound = findCompoundById('propan-1-ol');
+    const reply = askAgent('puzzle-propan-1-ol', '红外光谱说明什么？');
+
+    expect(reply.answer).toContain('O-H');
+    expect(reply.answer).toContain('C-O');
+    expect(reply.answer).toContain('排除醚类');
+    expect(reply.answer).not.toContain(compound.name);
+    expect(reply.matchedTopic).toContain('红外');
   });
 
   test.each([

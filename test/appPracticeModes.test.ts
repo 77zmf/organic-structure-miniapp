@@ -52,6 +52,22 @@ describe('app pair classroom selection', () => {
   });
 });
 
+describe('app chemistry notation and advanced puzzle clues', () => {
+  test('renders high-school formula subscripts and textbook clue cards in puzzle mode', async () => {
+    const puzzleTab = createModeButton('puzzle');
+    const root = createRoot({ modeButtons: [puzzleTab.button] });
+
+    await importApp(root);
+    puzzleTab.click();
+
+    expect(root.innerHTML).toContain('C<sub>4</sub>H<sub>10</sub>O');
+    expect(root.innerHTML).toContain('C<sub>4</sub>H<sub>10</sub>O 的不饱和度为 0');
+    expect(root.innerHTML).toContain('教材谱图线索');
+    expect(root.innerHTML).toContain('高考拆题点');
+    expect(root.innerHTML).toContain('核磁共振氢谱');
+  });
+});
+
 async function importApp(root: HTMLDivElement): Promise<void> {
   vi.stubGlobal('document', {
     querySelector: (selector: string) => (selector === '#app' ? root : null)

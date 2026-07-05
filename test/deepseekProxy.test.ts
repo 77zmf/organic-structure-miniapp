@@ -62,6 +62,20 @@ describe('deepseek prompt construction', () => {
     expect(system).toContain('另一个高中常见有机物');
     expect(system).toContain('不要直接公布目标物名称');
   });
+
+  test('includes textbook evidence cards and gaokao focus for advanced puzzles', () => {
+    const messages = buildDeepSeekMessages({
+      puzzleId: 'puzzle-butan-2-ol',
+      question: '核磁共振氢谱有什么线索？',
+      history: []
+    });
+    const serialized = JSON.stringify(messages);
+
+    expect(serialized).toContain('红外光谱');
+    expect(serialized).toContain('核磁共振氢谱');
+    expect(serialized).toContain('1∶1∶2∶3∶3');
+    expect(serialized).toContain('高考考点');
+  });
 });
 
 describe('deepseek guardrails', () => {

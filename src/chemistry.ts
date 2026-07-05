@@ -39,12 +39,21 @@ export interface PairReactionResult extends ReactionResult {
   product?: string;
 }
 
+export interface PuzzleEvidenceCard {
+  title: string;
+  detail: string;
+  inference: string;
+}
+
 export interface FormulaPuzzle {
   id: string;
   formula: string;
   targetCompoundId: string;
   openingHint: string;
   possibleStructures: string[];
+  difficulty?: '基础' | '进阶' | '高考';
+  evidenceCards?: PuzzleEvidenceCard[];
+  examFocus?: string[];
 }
 
 export interface AgentReply {
@@ -99,6 +108,26 @@ export const compounds: Compound[] = [
     functionalGroups: ['alcohol'],
     level: 'basic',
     summary: '含有羟基，能与钠反应放出氢气，也能与羧酸发生酯化。'
+  },
+  {
+    id: 'propan-1-ol',
+    name: '1-丙醇',
+    formula: 'C3H8O',
+    aliases: ['1-丙醇', '正丙醇', 'propan-1-ol', '1-propanol', 'ch3ch2ch2oh'],
+    structureFormula: 'CH3CH2CH2OH',
+    functionalGroups: ['alcohol'],
+    level: 'advanced',
+    summary: '含有醇羟基，可与钠反应放出氢气；可由相对分子质量 60、红外 O-H/C-O 以及氢谱四组峰推断。'
+  },
+  {
+    id: 'butan-2-ol',
+    name: '2-丁醇',
+    formula: 'C4H10O',
+    aliases: ['2-丁醇', '仲丁醇', 'butan-2-ol', '2-butanol', 'ch3chohch2ch3'],
+    structureFormula: 'CH3CHOHCH2CH3',
+    functionalGroups: ['alcohol'],
+    level: 'advanced',
+    summary: 'C4H10O 的醇类同分异构体；红外宽峰指向 O-H，氢谱五组峰且面积比为 1∶1∶2∶3∶3。'
   },
   {
     id: 'acetaldehyde',
@@ -196,7 +225,73 @@ export const formulaPuzzles: FormulaPuzzle[] = [
     formula: 'C2H6O',
     targetCompoundId: 'ethanol',
     openingHint: '同分异构可能包括醇和醚，可先问它是否能与金属钠反应。',
-    possibleStructures: ['乙醇', '二甲醚']
+    possibleStructures: ['乙醇', '二甲醚'],
+    difficulty: '进阶',
+    evidenceCards: [
+      {
+        title: '不饱和度',
+        detail: 'C2H6O 的不饱和度为 0。',
+        inference: '不含环、碳碳双键或羰基，优先在醇和醚之间筛选。'
+      },
+      {
+        title: '官能团检验',
+        detail: '若能与金属钠反应放出 H2，则含有 O-H 键。',
+        inference: '这可以把醇类同分异构体与醚类区分开。'
+      }
+    ],
+    examFocus: ['不饱和度初筛', '醇醚官能团异构', '金属钠检验羟基']
+  },
+  {
+    id: 'puzzle-propan-1-ol',
+    formula: 'C3H8O',
+    targetCompoundId: 'propan-1-ol',
+    openingHint: '这类题常给相对分子质量、红外键型和氢谱面积比，需要先定类别再定碳骨架。',
+    possibleStructures: ['1-丙醇', '2-丙醇', '甲乙醚'],
+    difficulty: '高考',
+    evidenceCards: [
+      {
+        title: '质谱信息',
+        detail: '相对分子质量为 60。',
+        inference: '结合只含 C、H、O 时，可锁定 C3H8O。'
+      },
+      {
+        title: '红外光谱',
+        detail: '有 C-H、O-H、C-O 键的振动吸收。',
+        inference: '含醇羟基，可排除醚类。'
+      },
+      {
+        title: '核磁共振氢谱',
+        detail: '有四组信号，峰面积比为 2∶1∶2∶3。',
+        inference: '四种氢环境和面积比共同指向端位醇骨架。'
+      }
+    ],
+    examFocus: ['相对分子质量确定分子式', '红外排除官能团类型异构', '氢谱峰组数与面积比定结构']
+  },
+  {
+    id: 'puzzle-butan-2-ol',
+    formula: 'C4H10O',
+    targetCompoundId: 'butan-2-ol',
+    openingHint: '教材微项目给出 C4H10O 多种同分异构体，需要结合红外和氢谱排除醚类与其他醇。',
+    possibleStructures: ['1-丁醇', '2-丁醇', '2-甲基-1-丙醇', '2-甲基-2-丙醇', '甲氧基丙烷', '乙氧基乙烷'],
+    difficulty: '高考',
+    evidenceCards: [
+      {
+        title: '不饱和度',
+        detail: 'C4H10O 的不饱和度为 0。',
+        inference: '没有环、C=C、C=O 等不饱和结构，重点比较醇和醚。'
+      },
+      {
+        title: '红外光谱',
+        detail: '3363 cm^-1 处有强而宽的吸收峰。',
+        inference: '含 O-H，优先判断为醇而不是醚。'
+      },
+      {
+        title: '核磁共振氢谱',
+        detail: '有五组信号，峰面积比为 1∶1∶2∶3∶3。',
+        inference: '氢环境数和比例排除高度对称结构，指向仲醇骨架。'
+      }
+    ],
+    examFocus: ['同分异构体筛选', '红外识别官能团', '核磁氢谱峰组数与面积比']
   },
   {
     id: 'puzzle-acetaldehyde',
@@ -248,6 +343,14 @@ const reagentReactionTable: Record<string, Record<string, ReactionResult>> = {
   ethanol: {
     sodium: positive('置换反应', '含有醇羟基，O-H 键可与钠反应。', '产生无色气体 H2。', '2CH3CH2OH + 2Na -> 2CH3CH2ONa + H2'),
     'acidic-kmno4': positive('氧化反应', '乙醇可被强氧化剂氧化。', '酸性高锰酸钾紫色逐渐褪去。')
+  },
+  'propan-1-ol': {
+    sodium: positive('置换反应', '含有醇羟基，O-H 键可与钠反应。', '产生无色气体 H2。'),
+    'acidic-kmno4': positive('氧化反应', '伯醇可被强氧化剂氧化。', '酸性高锰酸钾紫色逐渐褪去。')
+  },
+  'butan-2-ol': {
+    sodium: positive('置换反应', '含有醇羟基，O-H 键可与钠反应。', '产生无色气体 H2。'),
+    'acidic-kmno4': positive('氧化反应', '仲醇可被强氧化剂氧化。', '酸性高锰酸钾紫色逐渐褪去。')
   },
   acetaldehyde: {
     tollens: positive('氧化反应', '含有醛基，能被银氨溶液氧化。', '试管内壁出现银镜。'),
@@ -375,6 +478,11 @@ export function askAgent(puzzleId: string, question: string): AgentReply {
     };
   }
 
+  const evidenceReply = answerPuzzleEvidenceQuestion(puzzle, normalized, compound);
+  if (evidenceReply) {
+    return evidenceReply;
+  }
+
   const reagentId = matchReagent(normalized);
   if (reagentId) {
     const reagent = findReagentById(reagentId);
@@ -424,7 +532,7 @@ export function askAgent(puzzleId: string, question: string): AgentReply {
   }
 
   return {
-    answer: `这个问题可以转化成实验验证。已知分子式是 ${puzzle.formula}，建议优先问：是否与溴的四氯化碳溶液反应、是否发生银镜反应、是否与碳酸氢钠放出 CO2。`,
+    answer: fallbackQuestionGuide(puzzle),
     hintLevel: 'light',
     matchedTopic: 'fallback'
   };
@@ -451,6 +559,62 @@ function positive(type: string, reason: string, evidence: string, equation?: str
 
 function negative(type: string, reason: string, evidence: string): ReactionResult {
   return { reacts: false, type, reason, evidence };
+}
+
+function answerPuzzleEvidenceQuestion(
+  puzzle: FormulaPuzzle,
+  normalizedQuestion: string,
+  compound: Compound
+): AgentReply | null {
+  const cards = puzzle.evidenceCards ?? [];
+  const matchedCards = cards.filter((card) => evidenceCardMatchesQuestion(card, normalizedQuestion));
+
+  if (matchedCards.length > 0) {
+    const answer = matchedCards
+      .map((card) => `${card.title}：${card.detail}${card.inference}`)
+      .join(' ');
+
+    return {
+      answer: hideTargetFromAnswer(answer, compound),
+      hintLevel: 'medium',
+      matchedTopic: matchedCards.map((card) => card.title).join('、')
+    };
+  }
+
+  if (puzzle.examFocus?.length && (normalizedQuestion.includes('高考') || normalizedQuestion.includes('考点') || normalizedQuestion.includes('拆题'))) {
+    return {
+      answer: `这题的高考拆题点是：${puzzle.examFocus.join('、')}。建议按“不饱和度或分子式 -> 官能团证据 -> 氢谱峰组数和面积比 -> 同分异构体排除”的顺序追问。`,
+      hintLevel: 'light',
+      matchedTopic: '高考考点'
+    };
+  }
+
+  return null;
+}
+
+function evidenceCardMatchesQuestion(card: PuzzleEvidenceCard, normalizedQuestion: string): boolean {
+  const haystack = normalize(`${card.title}${card.detail}${card.inference}`);
+  const topicKeywords: string[][] = [
+    ['红外', 'ir', '吸收峰', 'cm^-1'],
+    ['核磁', 'nmr', '氢谱', '峰面积', '几组峰'],
+    ['质谱', '相对分子质量', 'mr', '分子离子峰'],
+    ['不饱和', '不饱和度'],
+    ['官能团', '检验']
+  ];
+
+  return topicKeywords.some((keywords) => {
+    const questionMentionsTopic = keywords.some((keyword) => normalizedQuestion.includes(normalize(keyword)));
+    const cardMentionsTopic = keywords.some((keyword) => haystack.includes(normalize(keyword)));
+    return questionMentionsTopic && cardMentionsTopic;
+  });
+}
+
+function fallbackQuestionGuide(puzzle: FormulaPuzzle): string {
+  if (puzzle.evidenceCards?.length) {
+    return `这个问题可以转化成结构测定线索。已知分子式是 ${puzzle.formula}，建议优先问：不饱和度是多少、红外光谱有什么线索、核磁共振氢谱有几组峰、是否与典型试剂反应。`;
+  }
+
+  return `这个问题可以转化成实验验证。已知分子式是 ${puzzle.formula}，建议优先问：是否与溴的四氯化碳溶液反应、是否发生银镜反应、是否与碳酸氢钠放出 CO2。`;
 }
 
 function matchesCompoundPair(first: Compound, second: Compound, firstId: string, secondId: string): boolean {

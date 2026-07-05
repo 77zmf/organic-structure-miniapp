@@ -466,6 +466,19 @@ button svg {
   line-height: 1.7;
 }
 
+.chem-formula sub {
+  font-size: 0.66em;
+  line-height: 0;
+  vertical-align: sub;
+}
+
+.formula-display.chem-formula,
+.locked-visualization strong.chem-formula,
+h2 .chem-formula {
+  overflow-wrap: normal;
+  white-space: nowrap;
+}
+
 .selector-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -730,8 +743,9 @@ button svg {
 }
 
 .formula-display {
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-height: 130px;
   margin: 16px 0;
   border: 1px solid #dbe4dd;
@@ -789,6 +803,80 @@ button svg {
   margin: 0;
   color: var(--muted);
   line-height: 1.7;
+}
+
+.puzzle-evidence {
+  display: grid;
+  gap: 14px;
+  margin: 16px 0;
+  min-width: 0;
+}
+
+.puzzle-evidence-block {
+  display: grid;
+  gap: 10px;
+}
+
+.puzzle-evidence-block h3 {
+  color: var(--teal-dark);
+  font-size: 15px;
+}
+
+.evidence-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+
+.evidence-card {
+  display: grid;
+  gap: 6px;
+  min-height: 112px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(19, 123, 114, 0.2);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(19, 123, 114, 0.08), rgba(49, 95, 156, 0.04)), #fff;
+}
+
+.evidence-card strong {
+  line-height: 1.3;
+}
+
+.evidence-card p,
+.evidence-card small {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.evidence-card small {
+  color: var(--teal-dark);
+  font-weight: 800;
+}
+
+.exam-focus-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exam-focus-list span {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(198, 134, 31, 0.28);
+  border-radius: 8px;
+  background: #fff7e8;
+  color: #7a4f12;
+  font-size: 13px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .puzzle-target-panel {
@@ -1014,6 +1102,10 @@ button svg {
   }
 
   .answer-row {
+    grid-template-columns: 1fr;
+  }
+
+  .evidence-card-grid {
     grid-template-columns: 1fr;
   }
 

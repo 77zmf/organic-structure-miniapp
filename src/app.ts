@@ -27,6 +27,7 @@ import {
   getReagentReaction,
   reagents
 } from './chemistry';
+import { formatChemicalFormula, formatChemistryText } from './formatChemistry';
 import { getMoleculeModel, type DisplayMode, type MoleculeModel } from './moleculeModels';
 import { createMoleculeViewer, type MoleculeViewer } from './moleculeViewer';
 import { createRandomPairQuestion, selectPairCompound, type PairSide } from './pairPractice';
@@ -81,7 +82,7 @@ interface AppState {
 const appRoot = getAppRoot();
 let chatRequestId = 0;
 const mountedMoleculeViewers: MoleculeViewer[] = [];
-const initialPuzzleUnlock = createPuzzleUnlockState('puzzle-ethanol');
+const initialPuzzleUnlock = createPuzzleUnlockState('puzzle-butan-2-ol');
 const challengeCompoundIds = compounds.map((compound) => compound.id);
 const challengeReagentIds = reagents.map((reagent) => reagent.id);
 const pairCompoundIds = compounds.map((compound) => compound.id);
@@ -407,6 +408,7 @@ function renderPairMode(): string {
 
 function renderPuzzleMode(): string {
   const puzzle = findPuzzleById(state.puzzleId);
+  const formattedFormula = formatChemicalFormula(puzzle.formula);
 
   return `
     <section class="workspace puzzle-layout" aria-label="高阶分子式结构推理">
@@ -414,16 +416,17 @@ function renderPuzzleMode(): string {
         <div class="panel-title-row">
           <div>
             <p class="section-kicker">高阶推理</p>
-            <h2>分子式 ${puzzle.formula}</h2>
+            <h2>分子式 <span class="chem-formula">${formattedFormula}</span></h2>
           </div>
           <button class="icon-text-button" data-action="new-puzzle" type="button">
             <i data-lucide="sparkles" aria-hidden="true"></i>
             新题
           </button>
         </div>
-        <div class="formula-display">${puzzle.formula}</div>
+        <div class="formula-display chem-formula">${formattedFormula}</div>
         ${renderPuzzleVisualization(puzzle)}
-        <p class="hint-line">${puzzle.openingHint}</p>
+        <p class="hint-line">${formatChemistryText(puzzle.openingHint)}</p>
+        ${renderPuzzleEvidence(puzzle)}
         <div class="answer-strip">
           <label class="input-label" for="structure-guess">结构猜测</label>
           <div class="inline-form">
@@ -449,20 +452,14 @@ function renderPuzzleMode(): string {
           <input id="proxy-url" class="text-input" value="${escapeHtml(state.proxyUrl)}" data-input="proxy-url" placeholder="例如：https://your-app.vercel.app/api/deepseek；留空则使用规则助手" />
         </div>
         <p class="proxy-status">${proxyStatusText()}</p>
-        <div class="quick-questions">
-          ${quickQuestion('能否与溴的四氯化碳溶液反应？')}
-          ${quickQuestion('能否与金属钠反应？')}
-          ${quickQuestion('能否发生银镜反应？')}
-          ${quickQuestion('能否与碳酸氢钠反应放出 CO2？')}
-          ${quickQuestion('能否与三氯化铁显紫色？')}
-        </div>
+        ${renderQuickQuestions(puzzle)}
         <div class="chat-log" aria-live="polite">
           ${state.chatMessages
             .map(
               (message) => `
                 <div class="chat-message ${message.role}">
                   <span>${message.role === 'agent' ? 'AI' : '我'}</span>
-                  <p>${escapeHtml(message.text)}</p>
+                  <p>${formatChemistryText(message.text)}</p>
                 </div>
               `
             )
@@ -480,7 +477,83 @@ function renderPuzzleMode(): string {
 }
 
 function quickQuestion(text: string): string {
-  return `<button class="quick-question" data-question="${escapeHtml(text)}" type="button" ${state.chatPending ? 'disabled' : ''}>${text}</button>`;
+  const safeText = escapeHtml(text);
+  return `<button class="quick-question" data-question="${safeText}" type="button" ${state.chatPending ? 'disabled' : ''}>${formatChemistryText(text)}</button>`;
+}
+
+function renderQuickQuestions(puzzle: FormulaPuzzle): string {
+  const evidenceQuestions = puzzle.evidenceCards?.length
+    ? [
+        '不饱和度是多少？',
+        '红外光谱有什么线索？',
+        '核磁共振氢谱有几组峰？',
+        '这题的高考考点是什么？'
+      ]
+    : [];
+  const hasMassEvidence = puzzle.evidenceCards?.some((card) => /质谱|相对分子质量/.test(card.title + card.detail));
+  const questions = [
+    ...evidenceQuestions,
+    ...(hasMassEvidence ? ['质谱或相对分子质量说明什么？'] : []),
+    '能否与溴的四氯化碳溶液反应？',
+    '能否与金属钠反应？',
+    '能否发生银镜反应？',
+    '能否与碳酸氢钠反应放出 CO2？',
+    '能否与三氯化铁显紫色？'
+  ];
+
+  return `
+    <div class="quick-questions">
+      ${questions.map((question) => quickQuestion(question)).join('')}
+    </div>
+  `;
+}
+
+function renderPuzzleEvidence(puzzle: FormulaPuzzle): string {
+  const evidenceCards = puzzle.evidenceCards ?? [];
+  const examFocus = puzzle.examFocus ?? [];
+
+  if (evidenceCards.length === 0 && examFocus.length === 0) {
+    return '';
+  }
+
+  return `
+    <section class="puzzle-evidence" aria-label="教材与高考推理线索">
+      ${
+        evidenceCards.length
+          ? `
+            <div class="puzzle-evidence-block">
+              <h3>教材谱图线索</h3>
+              <div class="evidence-card-grid">
+                ${evidenceCards
+                  .map(
+                    (card) => `
+                      <article class="evidence-card">
+                        <strong>${escapeHtml(card.title)}</strong>
+                        <p>${formatChemistryText(card.detail)}</p>
+                        <small>${formatChemistryText(card.inference)}</small>
+                      </article>
+                    `
+                  )
+                  .join('')}
+              </div>
+            </div>
+          `
+          : ''
+      }
+      ${
+        examFocus.length
+          ? `
+            <div class="puzzle-evidence-block">
+              <h3>高考拆题点</h3>
+              <div class="exam-focus-list">
+                ${examFocus.map((item) => `<span>${escapeHtml(item)}</span>`).join('')}
+              </div>
+            </div>
+          `
+          : ''
+      }
+    </section>
+  `;
 }
 
 function renderReagentCompoundPanel(compound: Compound): string {
@@ -514,11 +587,11 @@ function renderReagentCompoundPanel(compound: Compound): string {
       </div>
       ${renderMoleculeViewerHost(compound.id, `${compound.name}三维结构`)}
       <dl class="compound-facts">
-        <div><dt>分子式</dt><dd>${compound.formula}</dd></div>
-        <div><dt>结构简式</dt><dd>${compound.structureFormula}</dd></div>
+        <div><dt>分子式</dt><dd class="chem-formula">${formatChemicalFormula(compound.formula)}</dd></div>
+        <div><dt>结构简式</dt><dd class="chem-formula">${formatChemicalFormula(compound.structureFormula)}</dd></div>
         <div><dt>官能团</dt><dd>${functionalGroupLabels(compound).join('、')}</dd></div>
       </dl>
-      <p class="compound-summary">${compound.summary}</p>
+      <p class="compound-summary">${formatChemistryText(compound.summary)}</p>
     </section>
   `;
 }
@@ -600,11 +673,11 @@ function renderCompactCompound(compound: Compound): string {
   return `
     <article class="compound-mini">
       <div>
-        <p>${compound.formula}</p>
+        <p class="chem-formula">${formatChemicalFormula(compound.formula)}</p>
         <h3>${compound.name}</h3>
       </div>
       ${renderMoleculeViewerHost(compound.id, `${compound.name}三维结构`, 'compact')}
-      <span>${compound.structureFormula}</span>
+      <span class="chem-formula">${formatChemicalFormula(compound.structureFormula)}</span>
     </article>
   `;
 }
@@ -628,11 +701,11 @@ function renderSelectablePairCompound(compound: Compound, side: PairSide, label:
         </select>
       </label>
       <div>
-        <p>${compound.formula}</p>
+        <p class="chem-formula">${formatChemicalFormula(compound.formula)}</p>
         <h3>${compound.name}</h3>
       </div>
       ${renderMoleculeViewerHost(compound.id, `${compound.name}三维结构`, 'compact')}
-      <span>${compound.structureFormula}</span>
+      <span class="chem-formula">${formatChemicalFormula(compound.structureFormula)}</span>
     </article>
   `;
 }
@@ -649,7 +722,7 @@ function renderPuzzleVisualization(puzzle: FormulaPuzzle): string {
     return `
       <section class="locked-visualization" aria-label="分子式推理锁定面板">
         <span>分子式</span>
-        <strong>${puzzle.formula}</strong>
+        <strong class="chem-formula">${formatChemicalFormula(puzzle.formula)}</strong>
         <p>先根据实验性质推断结构；答对后显示三维模型。</p>
       </section>
     `;
@@ -696,7 +769,7 @@ function feedbackBlock(message: string): string {
   return `
     <div class="feedback ${good ? 'good' : 'review'}">
       <i data-lucide="${good ? 'check-circle-2' : 'x-circle'}" aria-hidden="true"></i>
-      <p>${message}</p>
+      <p>${formatChemistryText(message)}</p>
     </div>
   `;
 }

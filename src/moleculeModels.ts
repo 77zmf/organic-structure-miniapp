@@ -157,6 +157,92 @@ export const moleculeModels: Record<string, MoleculeModel> = {
       }
     ]
   },
+  'propan-1-ol': {
+    compoundId: 'propan-1-ol',
+    defaultDisplayMode: 'ball-stick',
+    atoms: [
+      { element: 'C', position: [-1.78, 0, 0] },
+      { element: 'C', position: [-0.5, 0.12, 0] },
+      { element: 'C', position: [0.82, 0, 0] },
+      { element: 'O', position: [1.9, 0.66, 0] },
+      { element: 'H', position: [2.62, 0.22, 0] },
+      { element: 'H', position: [-2.28, 0.95, 0] },
+      { element: 'H', position: [-2.34, -0.48, 0.82] },
+      { element: 'H', position: [-2.34, -0.48, -0.82] },
+      { element: 'H', position: [-0.5, 1.12, 0.74] },
+      { element: 'H', position: [-0.48, -0.84, -0.72] },
+      { element: 'H', position: [0.82, -1.0, 0.74] },
+      { element: 'H', position: [0.82, -1.0, -0.74] }
+    ],
+    bonds: [
+      { from: 0, to: 1, order: 1 },
+      { from: 1, to: 2, order: 1 },
+      { from: 2, to: 3, order: 1 },
+      { from: 3, to: 4, order: 1 },
+      { from: 0, to: 5, order: 1 },
+      { from: 0, to: 6, order: 1 },
+      { from: 0, to: 7, order: 1 },
+      { from: 1, to: 8, order: 1 },
+      { from: 1, to: 9, order: 1 },
+      { from: 2, to: 10, order: 1 },
+      { from: 2, to: 11, order: 1 }
+    ],
+    highlights: [
+      {
+        id: 'alcohol',
+        label: '醇羟基',
+        atomIndexes: [3, 4],
+        bondIndexes: [3],
+        color: '#e8590c'
+      }
+    ]
+  },
+  'butan-2-ol': {
+    compoundId: 'butan-2-ol',
+    defaultDisplayMode: 'ball-stick',
+    atoms: [
+      { element: 'C', position: [-2.0, 0, 0] },
+      { element: 'C', position: [-0.72, 0.05, 0] },
+      { element: 'C', position: [0.58, -0.02, 0] },
+      { element: 'C', position: [1.9, 0.04, 0] },
+      { element: 'O', position: [-0.72, 1.15, 0] },
+      { element: 'H', position: [-0.05, 1.72, 0] },
+      { element: 'H', position: [-2.5, 0.95, 0] },
+      { element: 'H', position: [-2.56, -0.48, 0.82] },
+      { element: 'H', position: [-2.56, -0.48, -0.82] },
+      { element: 'H', position: [-0.72, -0.82, -0.78] },
+      { element: 'H', position: [0.58, -1.02, 0.74] },
+      { element: 'H', position: [0.58, -1.02, -0.74] },
+      { element: 'H', position: [2.4, 0.98, 0] },
+      { element: 'H', position: [2.46, -0.48, 0.82] },
+      { element: 'H', position: [2.46, -0.48, -0.82] }
+    ],
+    bonds: [
+      { from: 0, to: 1, order: 1 },
+      { from: 1, to: 2, order: 1 },
+      { from: 2, to: 3, order: 1 },
+      { from: 1, to: 4, order: 1 },
+      { from: 4, to: 5, order: 1 },
+      { from: 0, to: 6, order: 1 },
+      { from: 0, to: 7, order: 1 },
+      { from: 0, to: 8, order: 1 },
+      { from: 1, to: 9, order: 1 },
+      { from: 2, to: 10, order: 1 },
+      { from: 2, to: 11, order: 1 },
+      { from: 3, to: 12, order: 1 },
+      { from: 3, to: 13, order: 1 },
+      { from: 3, to: 14, order: 1 }
+    ],
+    highlights: [
+      {
+        id: 'alcohol',
+        label: '醇羟基',
+        atomIndexes: [1, 4, 5],
+        bondIndexes: [3, 4],
+        color: '#e8590c'
+      }
+    ]
+  },
   acetaldehyde: {
     compoundId: 'acetaldehyde',
     defaultDisplayMode: 'ball-stick',

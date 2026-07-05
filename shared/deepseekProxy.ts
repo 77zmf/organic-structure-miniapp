@@ -72,6 +72,12 @@ export function buildDeepSeekMessages(payload: DeepSeekProxyPayload): DeepSeekMe
   const puzzle = findPuzzleById(payload.puzzleId);
   const compound = findCompoundById(puzzle.targetCompoundId);
   const history = payload.history ?? [];
+  const evidence = puzzle.evidenceCards?.length
+    ? puzzle.evidenceCards
+        .map((card) => `${card.title}：${card.detail} 推理方向：${card.inference}`)
+        .join('\n')
+    : '暂无额外谱图线索。';
+  const examFocus = puzzle.examFocus?.length ? puzzle.examFocus.join('、') : '按高中常见官能团性质推理。';
 
   return [
     {
@@ -84,7 +90,9 @@ export function buildDeepSeekMessages(payload: DeepSeekProxyPayload): DeepSeekMe
         '回答必须符合高中化学范围，语言简洁，优先说明“能/不能”、依据官能团、可观察现象。',
         '如果问题超出题目范围，只给出下一步可验证实验建议。',
         `隐藏目标物：${compound.name}；分子式：${compound.formula}；结构简式：${compound.structureFormula}；官能团：${compound.functionalGroups.join(', ')}；性质摘要：${compound.summary}`,
-        `候选结构：${puzzle.possibleStructures.join('、')}`
+        `候选结构：${puzzle.possibleStructures.join('、')}`,
+        `题目谱图线索：\n${evidence}`,
+        `高考考点：${examFocus}`
       ].join('\n')
     },
     {
