@@ -1,6 +1,21 @@
-// @ts-expect-error three is installed for runtime in this app, but its declarations are not present in this worktree.
-import { AmbientLight, Box3, Color, CylinderGeometry, DirectionalLight, Group, Mesh, MeshStandardMaterial, PerspectiveCamera, Scene, SphereGeometry, Vector3, WebGLRenderer } from 'three';
-// @ts-expect-error OrbitControls is available from three examples at runtime; local declarations are not installed.
+import {
+  AmbientLight,
+  Box3,
+  Color,
+  type ColorRepresentation,
+  CylinderGeometry,
+  DirectionalLight,
+  Group,
+  type Material,
+  Mesh,
+  MeshStandardMaterial,
+  type Object3D,
+  PerspectiveCamera,
+  Scene,
+  SphereGeometry,
+  Vector3,
+  WebGLRenderer
+} from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import {
   elementStyles,
@@ -16,8 +31,6 @@ const HIGHLIGHT_EMISSIVE_INTENSITY = 0.2;
 const BOND_RADIUS = 0.055;
 const MULTI_BOND_SPACING = 0.13;
 const MIN_CAMERA_RADIUS = 1;
-
-type ColorRepresentation = string | number;
 
 export interface MoleculeModelBounds {
   center: [number, number, number];
@@ -58,32 +71,6 @@ interface HighlightSelection {
   color: string | null;
 }
 
-interface VectorLike {
-  clone(): VectorLike;
-  cross(reference: VectorLike): VectorLike;
-  multiplyScalar(value: number): VectorLike;
-  normalize(): VectorLike;
-  dot(reference: VectorLike): number;
-}
-
-interface TraversableGroup {
-  traverse(callback: (object: DisposableObject) => void): void;
-  clear(): void;
-}
-
-interface DisposableObject {
-  geometry?: {
-    dispose(): void;
-  };
-  material?:
-    | {
-        dispose(): void;
-      }
-    | Array<{
-        dispose(): void;
-      }>;
-}
-
 export function calculateModelBounds(model: MoleculeModel): MoleculeModelBounds {
   if (model.atoms.length === 0) {
     return {
@@ -115,9 +102,9 @@ export function calculateModelBounds(model: MoleculeModel): MoleculeModelBounds 
   }
 
   return {
-    center: center.toArray(),
+    center: vectorToTuple(center),
     radius: Math.max(radius, MIN_CAMERA_RADIUS),
-    size: size.toArray()
+    size: vectorToTuple(size)
   };
 }
 
@@ -387,26 +374,35 @@ function getBondOffsets(cylinderCount: number): number[] {
   return [0];
 }
 
-function getOffsetDirection(direction: VectorLike): VectorLike {
+function getOffsetDirection(direction: Vector3): Vector3 {
   const reference = Math.abs(direction.dot(new Vector3(0, 0, 1))) > 0.9 ? new Vector3(0, 1, 0) : new Vector3(0, 0, 1);
   return direction.clone().cross(reference).normalize();
 }
 
-function disposeObject3D(group: TraversableGroup): void {
-  group.traverse((object) => {
-    if (!object.geometry || !object.material) {
-      return;
-    }
+function vectorToTuple(vector: Vector3): [number, number, number] {
+  return [vector.x, vector.y, vector.z];
+}
 
-    object.geometry.dispose();
-    const material = object.material;
-    if (Array.isArray(material)) {
-      material.forEach((item) => {
-        item.dispose();
-      });
-    } else {
-      material.dispose();
-    }
+function disposeObject3D(group: Group): void {
+  group.traverse((object: Object3D) => {
+    const mesh = object as Partial<Mesh>;
+    mesh.geometry?.dispose();
+    disposeMaterial(mesh.material);
   });
   group.clear();
+}
+
+function disposeMaterial(material: Material | Material[] | undefined): void {
+  if (!material) {
+    return;
+  }
+
+  if (Array.isArray(material)) {
+    material.forEach((item) => {
+      item.dispose();
+    });
+    return;
+  }
+
+  material.dispose();
 }
