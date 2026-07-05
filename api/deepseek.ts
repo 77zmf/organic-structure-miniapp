@@ -2,6 +2,7 @@ import {
   buildDeepSeekMessages,
   directRevealGuardAnswer,
   extractDeepSeekAnswer,
+  sanitizeAgentAnswer,
   shouldBlockDirectReveal,
   validateDeepSeekProxyRequest
 } from '../shared/deepseekProxy';
@@ -98,7 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const data = await upstream.json();
     res.status(200).json({
       provider: 'deepseek',
-      answer: extractDeepSeekAnswer(data)
+      answer: sanitizeAgentAnswer(extractDeepSeekAnswer(data), puzzle)
     });
   } catch (error) {
     res.status(502).json({

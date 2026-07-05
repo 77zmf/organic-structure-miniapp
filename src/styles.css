@@ -39,6 +39,12 @@ button {
   cursor: pointer;
 }
 
+button:disabled,
+input:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 .app-shell {
   width: min(1180px, calc(100% - 32px));
   margin: 0 auto;
@@ -245,8 +251,7 @@ button svg {
 
 .compound-summary,
 .hint-line,
-.proxy-status,
-.teacher-note span {
+.proxy-status {
   color: var(--muted);
   line-height: 1.7;
 }
@@ -403,43 +408,12 @@ button svg {
   font-weight: 900;
 }
 
-.isomer-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 14px 0;
-}
-
-.isomer-list span {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 6px 10px;
-  background: #fff;
-  color: var(--muted);
-  font-weight: 700;
-}
-
 .inline-form,
 .chat-input-row {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 10px;
   align-items: center;
-}
-
-.teacher-note {
-  display: grid;
-  gap: 6px;
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
-}
-
-.teacher-note summary {
-  width: max-content;
-  color: var(--teal-dark);
-  font-weight: 800;
-  cursor: pointer;
 }
 
 .quick-questions {

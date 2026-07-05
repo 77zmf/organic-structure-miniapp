@@ -53,9 +53,11 @@ interface AppState {
   structureGuess: string;
   puzzleFeedback: string;
   proxyStatus: string;
+  chatPending: boolean;
 }
 
 const appRoot = getAppRoot();
+let chatRequestId = 0;
 
 const state: AppState = {
   mode: 'reagent',
@@ -79,7 +81,8 @@ const state: AppState = {
   ],
   structureGuess: '',
   puzzleFeedback: '',
-  proxyStatus: ''
+  proxyStatus: '',
+  chatPending: false
 };
 
 render();
@@ -247,7 +250,6 @@ function renderPairMode(): string {
 
 function renderPuzzleMode(): string {
   const puzzle = findPuzzleById(state.puzzleId);
-  const target = findCompoundById(puzzle.targetCompoundId);
 
   return `
     <section class="workspace puzzle-layout" aria-label="高阶分子式结构推理">
@@ -264,9 +266,6 @@ function renderPuzzleMode(): string {
         </div>
         <div class="formula-display">${puzzle.formula}</div>
         <p class="hint-line">${puzzle.openingHint}</p>
-        <div class="isomer-list">
-          ${puzzle.possibleStructures.map((item) => `<span>${item}</span>`).join('')}
-        </div>
         <div class="answer-strip">
           <label class="input-label" for="structure-guess">结构猜测</label>
           <div class="inline-form">
@@ -275,10 +274,6 @@ function renderPuzzleMode(): string {
           </div>
         </div>
         ${feedbackBlock(state.puzzleFeedback)}
-        <details class="teacher-note">
-          <summary>教师核对</summary>
-          <span>${target.summary}</span>
-        </details>
       </section>
 
       <section class="chat-panel">
@@ -311,8 +306,8 @@ function renderPuzzleMode(): string {
             .join('')}
         </div>
         <div class="chat-input-row">
-          <input class="text-input" value="${escapeHtml(state.chatInput)}" data-input="chat" placeholder="输入一个实验性质问题" />
-          <button class="send-button" data-action="send-chat" type="button" aria-label="发送问题">
+          <input class="text-input" value="${escapeHtml(state.chatInput)}" data-input="chat" placeholder="输入一个实验性质问题" ${state.chatPending ? 'disabled' : ''} />
+          <button class="send-button" data-action="send-chat" type="button" aria-label="发送问题" ${state.chatPending ? 'disabled' : ''}>
             <i data-lucide="send" aria-hidden="true"></i>
           </button>
         </div>
@@ -322,7 +317,7 @@ function renderPuzzleMode(): string {
 }
 
 function quickQuestion(text: string): string {
-  return `<button class="quick-question" data-question="${escapeHtml(text)}" type="button">${text}</button>`;
+  return `<button class="quick-question" data-question="${escapeHtml(text)}" type="button" ${state.chatPending ? 'disabled' : ''}>${text}</button>`;
 }
 
 function renderCompoundPanel(compound: Compound): string {
@@ -587,10 +582,13 @@ function newPuzzleChallenge(): void {
 }
 
 function setPuzzle(puzzle: FormulaPuzzle): void {
+  chatRequestId += 1;
   state.puzzleId = puzzle.id;
   state.chatInput = '';
   state.structureGuess = '';
   state.puzzleFeedback = '';
+  state.proxyStatus = '';
+  state.chatPending = false;
   state.chatMessages = [
     {
       role: 'agent',
@@ -600,9 +598,13 @@ function setPuzzle(puzzle: FormulaPuzzle): void {
 }
 
 async function sendChat(): Promise<void> {
+  if (state.chatPending) return;
+
   const text = state.chatInput.trim();
   if (!text) return;
 
+  const requestId = ++chatRequestId;
+  const puzzleId = state.puzzleId;
   const history = state.chatMessages.slice(-8);
   state.chatMessages = [
     ...state.chatMessages,
@@ -610,9 +612,15 @@ async function sendChat(): Promise<void> {
   ];
   state.chatInput = '';
   state.proxyStatus = state.proxyUrl ? 'DeepSeek 请求中...' : '';
+  state.chatPending = true;
   render();
 
   const answer = await getAgentAnswer(text, history);
+  if (requestId !== chatRequestId || puzzleId !== state.puzzleId) {
+    return;
+  }
+
+  state.chatPending = false;
   state.chatMessages = [...state.chatMessages, { role: 'agent', text: answer }];
   render();
 }

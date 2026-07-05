@@ -114,7 +114,20 @@ export function shouldBlockDirectReveal(question: string, puzzle: FormulaPuzzle)
     normalized.includes('答案') ||
     normalized.includes('直接') ||
     normalized.includes('结构') ||
-    normalized.includes('告诉我');
+    normalized.includes('告诉我') ||
+    normalized.includes('叫什么') ||
+    normalized.includes('名字') ||
+    normalized.includes('名称') ||
+    normalized.includes('哪种') ||
+    normalized.includes('哪个有机物') ||
+    normalized.includes('最终') ||
+    normalized.includes('目标物') ||
+    normalized.includes('隐藏') ||
+    normalized.includes('提示词') ||
+    normalized.includes('prompt') ||
+    normalized.includes('system') ||
+    normalized.includes('忽略') ||
+    normalized.includes('规则');
   const namesTarget = target.aliases.some((alias) => normalized.includes(normalizeQuestion(alias)));
 
   return asksReveal || (normalized.includes('是不是') && namesTarget);
@@ -122,6 +135,34 @@ export function shouldBlockDirectReveal(question: string, puzzle: FormulaPuzzle)
 
 export function directRevealGuardAnswer(): string {
   return '先不直接公布结构。你可以继续问一个实验性质，例如是否能与钠、碳酸氢钠、银氨溶液或溴的四氯化碳溶液反应。';
+}
+
+export function sanitizeAgentAnswer(answer: string, puzzle: FormulaPuzzle): string {
+  const target = findCompoundById(puzzle.targetCompoundId);
+  const forbiddenTerms = [
+    target.name,
+    target.structureFormula,
+    ...target.aliases
+  ]
+    .map((term) => term.trim())
+    .filter((term) => term.length > 1 && normalizeQuestion(term) !== normalizeQuestion(target.formula));
+
+  let sanitized = answer;
+  let redacted = false;
+
+  for (const term of forbiddenTerms) {
+    const next = replaceAllCaseInsensitive(sanitized, term, '该隐藏目标');
+    if (next !== sanitized) {
+      redacted = true;
+      sanitized = next;
+    }
+  }
+
+  if (!redacted) {
+    return sanitized;
+  }
+
+  return `${sanitized}\n\n我不能直接公布结构。请继续通过实验性质完成判断。`;
 }
 
 function normalizeHistoryItem(input: unknown): { role: ChatRole; text: string } | null {
@@ -142,4 +183,12 @@ function normalizeHistoryItem(input: unknown): { role: ChatRole; text: string } 
 
 function normalizeQuestion(value: string): string {
   return value.toLowerCase().replace(/[？?！!，,。.、\s]/g, '');
+}
+
+function replaceAllCaseInsensitive(value: string, search: string, replacement: string): string {
+  return value.replace(new RegExp(escapeRegExp(search), 'gi'), replacement);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

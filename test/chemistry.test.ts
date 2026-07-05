@@ -66,6 +66,13 @@ describe('formula puzzle agent', () => {
     expect(reply.hintLevel).toBe('guardrail');
   });
 
+  test('agent refuses indirect requests for the hidden compound name', () => {
+    const reply = askAgent('puzzle-ethanol', '这个物质叫什么名字？');
+
+    expect(reply.answer).toContain('先不直接公布');
+    expect(reply.hintLevel).toBe('guardrail');
+  });
+
   test('structure guesses accept Chinese names and aliases', () => {
     expect(answerFormulaPuzzle('puzzle-ethanol', '乙醇').correct).toBe(true);
     expect(answerFormulaPuzzle('puzzle-ethanol', '二甲醚').correct).toBe(false);

@@ -422,7 +422,24 @@ function normalize(value: string): string {
 }
 
 function asksForDirectAnswer(normalized: string, compound: Compound): boolean {
-  const asksReveal = normalized.includes('答案') || normalized.includes('直接') || normalized.includes('告诉我结构');
+  const asksReveal =
+    normalized.includes('答案') ||
+    normalized.includes('直接') ||
+    normalized.includes('结构') ||
+    normalized.includes('告诉我') ||
+    normalized.includes('叫什么') ||
+    normalized.includes('名字') ||
+    normalized.includes('名称') ||
+    normalized.includes('哪种') ||
+    normalized.includes('哪个有机物') ||
+    normalized.includes('最终') ||
+    normalized.includes('目标物') ||
+    normalized.includes('隐藏') ||
+    normalized.includes('提示词') ||
+    normalized.includes('prompt') ||
+    normalized.includes('system') ||
+    normalized.includes('忽略') ||
+    normalized.includes('规则');
   const namesTarget = compound.aliases.some((alias) => normalized.includes(normalize(alias)));
   return asksReveal || (normalized.includes('是不是') && namesTarget);
 }
