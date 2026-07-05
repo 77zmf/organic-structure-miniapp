@@ -211,7 +211,7 @@ export function createEvidenceNoteFromAgentReply(reply: AgentReply): EvidenceNot
   let kind: EvidenceNote['kind'] = 'verified';
   if (reply.answer.startsWith('不能')) {
     kind = 'excluded';
-  } else if (reply.hintLevel === 'guardrail' || reply.matchedTopic === 'fallback') {
+  } else if (reply.hintLevel === 'guardrail' || reply.hintLevel === 'light' || reply.matchedTopic === 'fallback') {
     kind = 'guess';
   }
 

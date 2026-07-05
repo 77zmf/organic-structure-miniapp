@@ -33,6 +33,12 @@ describe('curiosity helper feedback', () => {
     expect(feedback).toContain('不能只凭公式');
   });
 
+  test('asks for review when saturated formula is predicted as unsaturated', () => {
+    const feedback = getUnsaturationPredictionFeedback('C4H10O', 0, ['carbonyl']);
+
+    expect(feedback).toContain('需要复盘');
+  });
+
   test('maps compound functional groups to classroom reaction roles', () => {
     expect(getPairRoleForCompound(findCompoundById('ethanol'))).toBe('hydroxyl');
     expect(getPairRoleForCompound(findCompoundById('acetic-acid'))).toBe('carboxyl');
@@ -72,6 +78,16 @@ describe('curiosity helper feedback', () => {
     expect(createEvidenceNoteFromAgentReply(excludedReply).kind).toBe('excluded');
     expect(createEvidenceNoteFromAgentReply(guardrailReply).kind).toBe('guess');
     expect(createEvidenceNoteFromAgentReply(fallbackReply).kind).toBe('guess');
+  });
+
+  test('classifies light guidance replies as exploratory notes', () => {
+    const examFocusReply: AgentReply = {
+      answer: '这题的高考拆题点是：不饱和度或分子式、官能团证据。',
+      hintLevel: 'light',
+      matchedTopic: '高考考点'
+    };
+
+    expect(createEvidenceNoteFromAgentReply(examFocusReply).kind).toBe('guess');
   });
 
   test('labels every current functional group value', () => {
