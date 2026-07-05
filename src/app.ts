@@ -38,6 +38,7 @@ import { createMoleculeViewer, type MoleculeViewer } from './moleculeViewer';
 import { createRandomPairQuestion, selectPairCompound, type PairSide } from './pairPractice';
 import { createPuzzleUnlockState, updatePuzzleUnlockWithGuess } from './puzzleUnlock';
 import { resolveInitialProxyUrl } from './proxyConfig';
+import { sanitizeAgentAnswer } from '../shared/deepseekProxy';
 import {
   advanceChallenge,
   createChallengeSession,
@@ -1910,7 +1911,7 @@ async function getAgentAnswer(
     }
 
     return createAgentAnswerResult(askAgent(puzzleId, question), {
-      answer: data.answer,
+      answer: sanitizeAgentAnswer(data.answer, findPuzzleById(puzzleId)),
       proxyStatus: data.provider === 'deepseek' ? 'DeepSeek 已回复。' : '已触发保护规则。'
     });
   } catch (error) {

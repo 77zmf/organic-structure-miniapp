@@ -124,7 +124,7 @@ export function getUnsaturationPredictionFeedback(
     return `先对 ${formula} 可能隐藏的结构做一个预测，再用不饱和度验证。`;
   }
 
-  const expectedPredictions = getLikelyUnsaturationPredictions(index);
+  const expectedPredictions = getLikelyUnsaturationPredictions(index, formula);
   const hasAlignedPrediction = predictions.some((prediction) => expectedPredictions.includes(prediction));
 
   if (!hasAlignedPrediction) {
@@ -146,12 +146,29 @@ export function getUnsaturationPredictionFeedback(
   return `不饱和度为 ${index}，可能支持苯环或多个不饱和单元的预测，但仍需实验验证，不能只凭公式定结构。`;
 }
 
-function getLikelyUnsaturationPredictions(index: number): UnsaturationPredictionId[] {
+function getLikelyUnsaturationPredictions(index: number, formula: string): UnsaturationPredictionId[] {
+  const oxygenCount = countElement(formula, 'O');
+  const maybeCarbonyl: UnsaturationPredictionId[] = oxygenCount > 0 ? ['carbonyl'] : [];
+
   if (index <= 0) return ['none'];
-  if (index === 1) return ['carbon-double-bond', 'carbonyl', 'ring'];
-  if (index === 2) return ['carbon-triple-bond', 'carbon-double-bond', 'carbonyl', 'ring'];
-  if (index >= 4) return ['benzene-ring', 'carbon-triple-bond', 'carbon-double-bond', 'carbonyl', 'ring'];
-  return ['carbon-triple-bond', 'carbon-double-bond', 'carbonyl', 'ring'];
+  if (index === 1) return ['carbon-double-bond', 'ring', ...maybeCarbonyl];
+  if (index === 2) return ['carbon-triple-bond', 'carbon-double-bond', 'ring', ...maybeCarbonyl];
+  if (index >= 4) return ['benzene-ring', 'carbon-triple-bond', 'carbon-double-bond', 'ring', ...maybeCarbonyl];
+  return ['carbon-triple-bond', 'carbon-double-bond', 'ring', ...maybeCarbonyl];
+}
+
+function countElement(formula: string, element: string): number {
+  const tokens = formula.match(/[A-Z][a-z]?\d*/g) ?? [];
+  let count = 0;
+
+  for (const token of tokens) {
+    const match = token.match(/^([A-Z][a-z]?)(\d*)$/);
+    if (match?.[1] === element) {
+      count += match[2] ? Number(match[2]) : 1;
+    }
+  }
+
+  return count;
 }
 
 export function getExpectedPhenomena(reaction: ReactionResult): PhenomenonId[] {

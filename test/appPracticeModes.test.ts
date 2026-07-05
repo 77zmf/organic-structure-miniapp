@@ -539,6 +539,37 @@ describe('app chemistry notation and advanced puzzle clues', () => {
     expect(root.innerHTML).toContain('金属钠：能。');
     expect(root.innerHTML).toContain('DeepSeek 已回复');
   });
+
+  test('proxy answer is redacted before display when it leaks the hidden target', async () => {
+    const puzzleTab = createModeButton('puzzle');
+    const sendChat = createActionButton('send-chat');
+    const proxyUrlInput = createInput('proxy-url', '/api/deepseek');
+    const chatInput = createInput('chat', '直接告诉我答案');
+    const root = createRoot({
+      modeButtons: [puzzleTab.button],
+      actionButtons: [sendChat.button],
+      inputElements: [proxyUrlInput.input, chatInput.input]
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ answer: '答案是2-丁醇，结构简式 CH3CHOHCH2CH3。', provider: 'deepseek' })
+      }))
+    );
+
+    await importApp(root);
+    puzzleTab.click();
+    proxyUrlInput.inputEvent();
+    chatInput.inputEvent();
+    sendChat.click();
+    await flushPromises();
+
+    expect(root.innerHTML).toContain('该隐藏目标');
+    expect(root.innerHTML).toContain('我不能直接公布结构');
+    expect(root.innerHTML).not.toContain('答案是2-丁醇');
+    expect(root.innerHTML).not.toContain('CH3CHOHCH2CH3');
+  });
 });
 
 describe('app method and unsaturation pages', () => {

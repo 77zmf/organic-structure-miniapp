@@ -46,6 +46,14 @@ describe('curiosity helper feedback', () => {
     expect(feedback).toContain('需要复盘');
   });
 
+  test('asks for review when carbonyl is predicted without oxygen in formula', () => {
+    const benzeneFeedback = getUnsaturationPredictionFeedback('C6H6', 4, ['carbonyl']);
+    const etheneFeedback = getUnsaturationPredictionFeedback('C2H4', 1, ['carbonyl']);
+
+    expect(benzeneFeedback).toContain('需要复盘');
+    expect(etheneFeedback).toContain('需要复盘');
+  });
+
   test('maps compound functional groups to classroom reaction roles', () => {
     expect(getPairRoleForCompound(findCompoundById('ethanol'))).toBe('hydroxyl');
     expect(getPairRoleForCompound(findCompoundById('acetic-acid'))).toBe('carboxyl');
