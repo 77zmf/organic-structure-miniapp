@@ -2,6 +2,7 @@ node_modules/
 dist/
 .playwright-cli/
 .superpowers/
+.worktrees/
 output/
 .env
 .env.*
