@@ -12,9 +12,11 @@ vi.mock('../src/moleculeViewer', () => ({
 vi.mock('lucide', () => ({
   Beaker: {},
   Brain: {},
+  Calculator: {},
   CheckCircle2: {},
   FlaskConical: {},
   GitBranch: {},
+  Map: {},
   RefreshCw: {},
   Send: {},
   Shuffle: {},

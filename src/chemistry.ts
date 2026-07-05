@@ -68,6 +68,13 @@ export interface GuessResult {
   compound: Compound;
 }
 
+interface FormulaCounts {
+  carbon: number;
+  hydrogen: number;
+  nitrogen: number;
+  halogen: number;
+}
+
 export const compounds: Compound[] = [
   {
     id: 'methane',
@@ -329,6 +336,30 @@ export const formulaPuzzles: FormulaPuzzle[] = [
     possibleStructures: ['甲醛']
   }
 ];
+
+export function calculateUnsaturationIndex(formula: string): number {
+  const counts = parseFormulaCounts(formula);
+  return counts.carbon + 1 + counts.nitrogen / 2 - (counts.hydrogen + counts.halogen) / 2;
+}
+
+function parseFormulaCounts(formula: string): FormulaCounts {
+  const counts: FormulaCounts = { carbon: 0, hydrogen: 0, nitrogen: 0, halogen: 0 };
+  const tokens = formula.match(/[A-Z][a-z]?\d*/g) ?? [];
+
+  for (const token of tokens) {
+    const match = token.match(/^([A-Z][a-z]?)(\d*)$/);
+    if (!match) continue;
+    const element = match[1];
+    const count = match[2] ? Number(match[2]) : 1;
+
+    if (element === 'C') counts.carbon += count;
+    if (element === 'H') counts.hydrogen += count;
+    if (element === 'N') counts.nitrogen += count;
+    if (element === 'F' || element === 'Cl' || element === 'Br' || element === 'I') counts.halogen += count;
+  }
+
+  return counts;
+}
 
 const reagentReactionTable: Record<string, Record<string, ReactionResult>> = {
   ethene: {

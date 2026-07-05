@@ -7,9 +7,11 @@ vi.mock('../src/moleculeViewer', () => ({
 vi.mock('lucide', () => ({
   Beaker: {},
   Brain: {},
+  Calculator: {},
   CheckCircle2: {},
   FlaskConical: {},
   GitBranch: {},
+  Map: {},
   RefreshCw: {},
   Send: {},
   Shuffle: {},
@@ -53,7 +55,7 @@ describe('app pair classroom selection', () => {
 });
 
 describe('app chemistry notation and advanced puzzle clues', () => {
-  test('renders high-school formula subscripts and textbook clue cards in puzzle mode', async () => {
+  test('renders high-school formula subscripts without inline hints in puzzle mode', async () => {
     const puzzleTab = createModeButton('puzzle');
     const root = createRoot({ modeButtons: [puzzleTab.button] });
 
@@ -61,10 +63,42 @@ describe('app chemistry notation and advanced puzzle clues', () => {
     puzzleTab.click();
 
     expect(root.innerHTML).toContain('C<sub>4</sub>H<sub>10</sub>O');
-    expect(root.innerHTML).toContain('C<sub>4</sub>H<sub>10</sub>O 的不饱和度为 0');
-    expect(root.innerHTML).toContain('教材谱图线索');
-    expect(root.innerHTML).toContain('高考拆题点');
-    expect(root.innerHTML).toContain('核磁共振氢谱');
+    expect(root.innerHTML).toContain('结构猜测');
+    expect(root.innerHTML).not.toContain('教材微项目给出');
+    expect(root.innerHTML).not.toContain('quick-question');
+    expect(root.innerHTML).not.toContain('教材谱图线索');
+    expect(root.innerHTML).not.toContain('已给出分子式');
+  });
+});
+
+describe('app method and unsaturation pages', () => {
+  test('renders a standalone unsaturation index page', async () => {
+    const unsaturationTab = createModeButton('unsaturation');
+    const root = createRoot({ modeButtons: [unsaturationTab.button] });
+
+    await importApp(root);
+    unsaturationTab.click();
+
+    expect(root.innerHTML).toContain('不饱和度计算');
+    expect(root.innerHTML).toContain('C<sub>6</sub>H<sub>6</sub>');
+    expect(root.innerHTML).toContain('不饱和度为 4');
+    expect(root.innerHTML).toContain('苯环');
+  });
+
+  test('renders textbook method guide flows', async () => {
+    const methodTab = createModeButton('method');
+    const root = createRoot({ modeButtons: [methodTab.button] });
+
+    await importApp(root);
+    methodTab.click();
+
+    expect(root.innerHTML).toContain('方法指引');
+    expect(root.innerHTML).toContain('测定有机化合物结构流程');
+    expect(root.innerHTML).toContain('元素组成');
+    expect(root.innerHTML).toContain('相对分子质量');
+    expect(root.innerHTML).toContain('官能团及碳骨架状况');
+    expect(root.innerHTML).toContain('计算不饱和度');
+    expect(root.innerHTML).toContain('确定有机化合物结构式');
   });
 });
 

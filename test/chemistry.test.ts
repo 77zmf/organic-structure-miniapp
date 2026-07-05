@@ -2,11 +2,24 @@ import { describe, expect, test } from 'vitest';
 import {
   answerFormulaPuzzle,
   askAgent,
+  calculateUnsaturationIndex,
   findCompoundById,
   findPuzzleById,
   getOrganicPairReaction,
   getReagentReaction
 } from '../src/chemistry';
+
+describe('unsaturation index calculation', () => {
+  test.each([
+    ['C6H6', 4],
+    ['C4H10O', 0],
+    ['C2H4', 1],
+    ['C2H2', 2],
+    ['CH3Cl', 0]
+  ])('calculates textbook unsaturation index for %s', (formula, expected) => {
+    expect(calculateUnsaturationIndex(formula)).toBe(expected);
+  });
+});
 
 describe('reagent reaction rules', () => {
   test('ethene decolorizes bromine in carbon tetrachloride by addition', () => {

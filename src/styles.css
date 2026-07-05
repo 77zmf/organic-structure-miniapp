@@ -165,7 +165,7 @@ button svg {
 
 .mode-tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
   margin: 10px 0 18px;
 }
@@ -287,6 +287,8 @@ button svg {
 .task-panel,
 .formula-panel,
 .chat-panel,
+.method-panel,
+.unsaturation-panel,
 .compound-mini {
   min-width: 0;
   border: 1px solid var(--line);
@@ -298,7 +300,9 @@ button svg {
 .compound-panel,
 .task-panel,
 .formula-panel,
-.chat-panel {
+.chat-panel,
+.method-panel,
+.unsaturation-panel {
   padding: 18px;
 }
 
@@ -738,6 +742,217 @@ h2 .chem-formula {
   font-weight: 900;
 }
 
+.method-layout,
+.unsaturation-layout {
+  grid-template-columns: 1fr;
+}
+
+.method-panel,
+.unsaturation-panel {
+  background:
+    linear-gradient(135deg, rgba(19, 123, 114, 0.06), transparent 360px),
+    rgba(255, 255, 255, 0.96);
+}
+
+.method-hero {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 18px;
+}
+
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.guide-card {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid rgba(19, 123, 114, 0.2);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.guide-card h3 {
+  color: var(--teal-dark);
+  font-size: 17px;
+}
+
+.flow-board {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px dashed rgba(49, 95, 156, 0.25);
+  border-radius: 8px;
+  background:
+    linear-gradient(rgba(49, 95, 156, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(19, 123, 114, 0.05) 1px, transparent 1px),
+    #fff;
+  background-size: 22px 22px;
+}
+
+.flow-lane,
+.flow-merge {
+  display: grid;
+  gap: 10px;
+  align-items: start;
+}
+
+.three-lane {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.two-lane,
+.flow-merge {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.flow-lane > div,
+.flow-merge > div {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  text-align: center;
+}
+
+.flow-node {
+  display: grid;
+  place-items: center;
+  min-height: 64px;
+  padding: 10px;
+  border: 1px solid rgba(198, 134, 31, 0.22);
+  border-radius: 8px;
+  background: #fff1df;
+  color: #3d2b1f;
+  font-weight: 850;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.main-node,
+.final-node {
+  width: min(340px, 100%);
+  margin: 0 auto;
+  background: #ffe2ca;
+}
+
+.flow-tag {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.flow-arrow {
+  color: var(--blue);
+  font-size: 25px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.unsaturation-panel .panel-title-row {
+  align-items: end;
+}
+
+.compact-select {
+  width: min(260px, 100%);
+}
+
+.unsaturation-result {
+  display: grid;
+  gap: 8px;
+  padding: 24px;
+  border: 1px solid rgba(19, 123, 114, 0.22);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(19, 123, 114, 0.14), transparent 10px),
+    linear-gradient(135deg, rgba(49, 95, 156, 0.08), rgba(19, 123, 114, 0.06)),
+    #fff;
+}
+
+.unsaturation-result > span {
+  color: var(--blue);
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.unsaturation-result strong {
+  color: var(--teal-dark);
+  font-size: 24px;
+  line-height: 1.25;
+}
+
+.unsaturation-result p {
+  max-width: 760px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.unsaturation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.unsaturation-grid article,
+.related-formula-list {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(215, 222, 216, 0.88);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.unsaturation-grid h3,
+.related-formula-list h3 {
+  color: var(--teal-dark);
+  font-size: 16px;
+}
+
+.unsaturation-grid p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.related-formula-list {
+  margin-top: 14px;
+}
+
+.related-formula-list > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.related-formula-list > div > span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(49, 95, 156, 0.18);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.related-formula-list .chem-formula {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
 .puzzle-layout {
   grid-template-columns: minmax(330px, 0.85fr) minmax(420px, 1.15fr);
 }
@@ -1005,6 +1220,8 @@ h2 .chem-formula {
   .mode-tabs,
   .two-column,
   .puzzle-layout,
+  .guide-grid,
+  .unsaturation-grid,
   .compound-pair,
   .compound-heading-row {
     grid-template-columns: 1fr;
@@ -1039,6 +1256,12 @@ h2 .chem-formula {
   }
 
   .selector-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .three-lane,
+  .two-lane,
+  .flow-merge {
     grid-template-columns: 1fr;
   }
 }
@@ -1090,6 +1313,8 @@ h2 .chem-formula {
   .task-panel,
   .formula-panel,
   .chat-panel,
+  .method-panel,
+  .unsaturation-panel,
   .compound-mini {
     padding: 14px;
   }
@@ -1115,6 +1340,18 @@ h2 .chem-formula {
 
   .locked-visualization strong {
     font-size: 36px;
+  }
+
+  .unsaturation-result {
+    padding: 18px;
+  }
+
+  .unsaturation-result > span {
+    font-size: 34px;
+  }
+
+  .unsaturation-result strong {
+    font-size: 21px;
   }
 
   .compound-facts div {
