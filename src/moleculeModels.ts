@@ -65,7 +65,7 @@ export const moleculeModels: Record<string, MoleculeModel> = {
       {
         id: 'alkane',
         label: '饱和烃',
-        atomIndexes: [0],
+        atomIndexes: [0, 1, 2, 3, 4],
         bondIndexes: [0, 1, 2, 3],
         color: '#4dabf7'
       }

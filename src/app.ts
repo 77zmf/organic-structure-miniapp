@@ -15,6 +15,7 @@ import './styles.css';
 import {
   type Compound,
   type FormulaPuzzle,
+  type FunctionalGroup,
   answerFormulaPuzzle,
   askAgent,
   compounds,
@@ -423,7 +424,7 @@ function chainSvg(parts: string[], label: string): string {
 }
 
 function functionalGroupLabels(compound: Compound): string[] {
-  const labels: Record<string, string> = {
+  const labels: Record<FunctionalGroup, string> = {
     alkane: '饱和烃',
     alkene: '碳碳双键',
     alkyne: '碳碳三键',
