@@ -203,6 +203,26 @@ button svg {
     var(--shadow-soft);
 }
 
+.curiosity-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(49, 95, 156, 0.2);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(49, 95, 156, 0.1), transparent 9px),
+    rgba(255, 255, 255, 0.82);
+  box-shadow: var(--shadow-soft);
+}
+
+.curiosity-bar strong {
+  display: block;
+  line-height: 1.55;
+}
+
 .viewer-controls {
   display: flex;
   align-items: center;
@@ -1295,6 +1315,11 @@ h2 .chem-formula {
 
   .mode-tab small {
     display: none;
+  }
+
+  .curiosity-bar {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .panel-title-row {

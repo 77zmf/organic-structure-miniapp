@@ -45,6 +45,7 @@ import {
   type ChallengeSession,
   type ReagentPracticeMode
 } from './reagentPractice';
+import { curiosityQuestions } from './curiosity';
 
 type Mode = 'method' | 'unsaturation' | 'reagent' | 'pair' | 'puzzle';
 type YesNo = 'yes' | 'no' | null;
@@ -81,6 +82,7 @@ interface AppState {
   proxyStatus: string;
   chatPending: boolean;
   proxyCheckPending: boolean;
+  curiosityQuestionIndex: number;
 }
 
 const appRoot = getAppRoot();
@@ -121,7 +123,8 @@ const state: AppState = {
   puzzleFeedback: '',
   proxyStatus: '',
   chatPending: false,
-  proxyCheckPending: false
+  proxyCheckPending: false,
+  curiosityQuestionIndex: 0
 };
 
 render();
@@ -157,6 +160,8 @@ function render(): void {
         ${modeButton('pair', '进阶', '有机物间反应', 'flask-conical')}
         ${modeButton('puzzle', '高阶', '分子式推理', 'brain')}
       </nav>
+
+      ${renderCuriosityBar()}
 
       ${state.mode === 'method' || state.mode === 'unsaturation' ? '' : renderViewerControls()}
 
@@ -197,6 +202,19 @@ function modeButton(mode: Mode, label: string, detail: string, icon: string): st
       <span>${label}</span>
       <small>${detail}</small>
     </button>
+  `;
+}
+
+function renderCuriosityBar(): string {
+  const question = curiosityQuestions[state.curiosityQuestionIndex % curiosityQuestions.length];
+  return `
+    <section class="curiosity-bar" aria-label="今日追问">
+      <div>
+        <p class="section-kicker">今日追问</p>
+        <strong>${escapeHtml(question)}</strong>
+      </div>
+      <button class="icon-text-button" data-action="next-curiosity-question" type="button">换一个</button>
+    </section>
   `;
 }
 
@@ -1047,8 +1065,14 @@ function bindEvents(): void {
       if (action === 'send-chat') sendChat();
       if (action === 'submit-guess') submitGuess();
       if (action === 'check-proxy') checkProxyStatus();
+      if (action === 'next-curiosity-question') nextCuriosityQuestion();
     });
   });
+}
+
+function nextCuriosityQuestion(): void {
+  state.curiosityQuestionIndex = (state.curiosityQuestionIndex + 1) % curiosityQuestions.length;
+  render();
 }
 
 function setReagentPracticeMode(mode: ReagentPracticeMode): void {

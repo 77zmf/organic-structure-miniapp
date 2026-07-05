@@ -102,6 +102,17 @@ describe('app method and unsaturation pages', () => {
   });
 });
 
+describe('app curiosity bar', () => {
+  test('renders a global curiosity question and cycle action', async () => {
+    const root = createRoot();
+
+    await importApp(root);
+
+    expect(root.innerHTML).toContain('今日追问');
+    expect(root.innerHTML).toContain('data-action="next-curiosity-question"');
+  });
+});
+
 async function importApp(root: HTMLDivElement): Promise<void> {
   vi.stubGlobal('document', {
     querySelector: (selector: string) => (selector === '#app' ? root : null)
