@@ -29,6 +29,17 @@ describe('molecule model data', () => {
     }
   });
 
+  test('every compound functional group has an addressable highlight id', () => {
+    for (const compound of compounds) {
+      const model = getMoleculeModel(compound.id);
+      const highlightIds = model.highlights.map((highlight) => highlight.id);
+
+      for (const group of compound.functionalGroups) {
+        expect(highlightIds).toContain(group);
+      }
+    }
+  });
+
   test('all model atom elements have visual styles', () => {
     const elements = new Set(Object.values(moleculeModels).flatMap((model) => model.atoms.map((atom) => atom.element)));
 

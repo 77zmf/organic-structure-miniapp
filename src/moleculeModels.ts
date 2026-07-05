@@ -1,3 +1,5 @@
+import type { FunctionalGroup } from './chemistry';
+
 export type ElementSymbol = 'C' | 'H' | 'O';
 export type DisplayMode = 'ball-stick' | 'space-fill';
 
@@ -13,6 +15,7 @@ export interface MoleculeBond {
 }
 
 export interface FunctionalGroupHighlight {
+  id: FunctionalGroup;
   label: string;
   atomIndexes: number[];
   bondIndexes: number[];
@@ -60,6 +63,7 @@ export const moleculeModels: Record<string, MoleculeModel> = {
     ],
     highlights: [
       {
+        id: 'alkane',
         label: '饱和烃',
         atomIndexes: [0],
         bondIndexes: [0, 1, 2, 3],
@@ -87,6 +91,7 @@ export const moleculeModels: Record<string, MoleculeModel> = {
     ],
     highlights: [
       {
+        id: 'alkene',
         label: '碳碳双键',
         atomIndexes: [0, 1],
         bondIndexes: [0],
@@ -110,6 +115,7 @@ export const moleculeModels: Record<string, MoleculeModel> = {
     ],
     highlights: [
       {
+        id: 'alkyne',
         label: '碳碳三键',
         atomIndexes: [0, 1],
         bondIndexes: [0],
@@ -143,6 +149,7 @@ export const moleculeModels: Record<string, MoleculeModel> = {
     ],
     highlights: [
       {
+        id: 'alcohol',
         label: '醇羟基',
         atomIndexes: [2, 3],
         bondIndexes: [2],
@@ -172,6 +179,7 @@ export const moleculeModels: Record<string, MoleculeModel> = {
     ],
     highlights: [
       {
+        id: 'aldehyde',
         label: '醛基',
         atomIndexes: [1, 2, 3],
         bondIndexes: [1, 2],
@@ -203,6 +211,7 @@ export const moleculeModels: Record<string, MoleculeModel> = {
     ],
     highlights: [
       {
+        id: 'carboxylic-acid',
         label: '羧基',
         atomIndexes: [1, 2, 3, 4],
         bondIndexes: [1, 2, 3],
@@ -246,6 +255,7 @@ export const moleculeModels: Record<string, MoleculeModel> = {
     ],
     highlights: [
       {
+        id: 'ester',
         label: '酯基',
         atomIndexes: [1, 2, 3],
         bondIndexes: [1, 2],
@@ -286,6 +296,7 @@ export const moleculeModels: Record<string, MoleculeModel> = {
     ],
     highlights: [
       {
+        id: 'arene',
         label: '苯环',
         atomIndexes: [0, 1, 2, 3, 4, 5],
         bondIndexes: [0, 1, 2, 3, 4, 5],
@@ -328,12 +339,14 @@ export const moleculeModels: Record<string, MoleculeModel> = {
     ],
     highlights: [
       {
+        id: 'arene',
         label: '苯环',
         atomIndexes: [0, 1, 2, 3, 4, 5],
         bondIndexes: [0, 1, 2, 3, 4, 5],
         color: '#fab005'
       },
       {
+        id: 'phenol',
         label: '酚羟基',
         atomIndexes: [0, 6, 7],
         bondIndexes: [6, 7],
@@ -357,6 +370,7 @@ export const moleculeModels: Record<string, MoleculeModel> = {
     ],
     highlights: [
       {
+        id: 'aldehyde',
         label: '醛基',
         atomIndexes: [0, 1, 2],
         bondIndexes: [0, 1],
@@ -392,6 +406,7 @@ export const moleculeModels: Record<string, MoleculeModel> = {
     ],
     highlights: [
       {
+        id: 'ketone',
         label: '酮羰基',
         atomIndexes: [0, 1, 2, 3],
         bondIndexes: [0, 1, 2],
