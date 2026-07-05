@@ -30,6 +30,7 @@ import {
 import { getMoleculeModel, type DisplayMode, type MoleculeModel } from './moleculeModels';
 import { createMoleculeViewer, type MoleculeViewer } from './moleculeViewer';
 import { createPuzzleUnlockState, updatePuzzleUnlockWithGuess } from './puzzleUnlock';
+import { resolveInitialProxyUrl } from './proxyConfig';
 
 type Mode = 'reagent' | 'pair' | 'puzzle';
 type YesNo = 'yes' | 'no' | null;
@@ -62,6 +63,7 @@ interface AppState {
   puzzleFeedback: string;
   proxyStatus: string;
   chatPending: boolean;
+  proxyCheckPending: boolean;
 }
 
 const appRoot = getAppRoot();
@@ -96,7 +98,8 @@ const state: AppState = {
   structureGuess: '',
   puzzleFeedback: '',
   proxyStatus: '',
-  chatPending: false
+  chatPending: false,
+  proxyCheckPending: false
 };
 
 render();
@@ -404,13 +407,18 @@ function renderPuzzleMode(): string {
       <section class="chat-panel">
         <div class="panel-title-row">
           <div>
-            <p class="section-kicker">AI 推理助手原型</p>
+            <p class="section-kicker">AI 推理助手</p>
             <h2>实验性质问答</h2>
           </div>
+          <button class="icon-text-button" data-action="check-proxy" type="button" ${state.proxyCheckPending ? 'disabled' : ''}>
+            ${state.proxyCheckPending ? '检测中' : '测试连接'}
+          </button>
         </div>
-        <label class="input-label" for="proxy-url">DeepSeek 代理 URL</label>
-        <input id="proxy-url" class="text-input" value="${escapeHtml(state.proxyUrl)}" data-input="proxy-url" placeholder="例如：https://your-app.vercel.app/api/deepseek；留空则使用规则助手" />
-        <p class="proxy-status">${state.proxyUrl ? '已配置代理；请求失败会自动回退到规则助手。' : '当前使用本地规则助手。部署 Vercel 后可填入 /api/deepseek 或完整代理 URL。'}${state.proxyStatus ? ` ${escapeHtml(state.proxyStatus)}` : ''}</p>
+        <div class="proxy-config-row">
+          <label class="input-label" for="proxy-url">DeepSeek 代理 URL</label>
+          <input id="proxy-url" class="text-input" value="${escapeHtml(state.proxyUrl)}" data-input="proxy-url" placeholder="例如：https://your-app.vercel.app/api/deepseek；留空则使用规则助手" />
+        </div>
+        <p class="proxy-status">${proxyStatusText()}</p>
         <div class="quick-questions">
           ${quickQuestion('能否与溴的四氯化碳溶液反应？')}
           ${quickQuestion('能否与金属钠反应？')}
@@ -623,6 +631,7 @@ function bindEvents(): void {
       if (action === 'new-puzzle') newPuzzleChallenge();
       if (action === 'send-chat') sendChat();
       if (action === 'submit-guess') submitGuess();
+      if (action === 'check-proxy') checkProxyStatus();
     });
   });
 }
@@ -695,6 +704,7 @@ function setPuzzle(puzzle: FormulaPuzzle): void {
   state.puzzleFeedback = '';
   state.proxyStatus = '';
   state.chatPending = false;
+  state.proxyCheckPending = false;
   state.chatMessages = [
     {
       role: 'agent',
@@ -772,13 +782,51 @@ function escapeHtml(value: string): string {
 }
 
 function getInitialProxyUrl(): string {
-  const saved = localStorage.getItem('deepseekProxyUrl');
-  if (saved !== null) return saved;
-  const hostname = window.location.hostname;
-  if (hostname.endsWith('github.io') || hostname === 'localhost' || hostname === '127.0.0.1') {
-    return '';
+  return resolveInitialProxyUrl({
+    hostname: window.location.hostname,
+    search: window.location.search,
+    savedProxyUrl: localStorage.getItem('deepseekProxyUrl'),
+    envProxyUrl: import.meta.env.VITE_DEEPSEEK_PROXY_URL
+  });
+}
+
+function proxyStatusText(): string {
+  const mode = state.proxyUrl ? 'DeepSeek 代理已填写；不可用时会自动回退到规则助手。' : '当前使用本地规则助手。部署 Vercel 代理后可填入 /api/deepseek 或完整代理 URL。';
+  return state.proxyStatus ? `${mode} ${escapeHtml(state.proxyStatus)}` : mode;
+}
+
+async function checkProxyStatus(): Promise<void> {
+  if (!state.proxyUrl) {
+    state.proxyStatus = '当前没有代理 URL，会使用本地规则助手。';
+    render();
+    return;
   }
-  return '/api/deepseek';
+
+  state.proxyCheckPending = true;
+  state.proxyStatus = '正在检测 DeepSeek 代理...';
+  render();
+
+  try {
+    const response = await fetch(state.proxyUrl, { method: 'GET' });
+    const data = (await response.json().catch(() => ({}))) as {
+      configured?: boolean;
+      model?: string;
+      error?: string;
+    };
+
+    if (!response.ok) {
+      throw new Error(data.error || `代理返回 ${response.status}`);
+    }
+
+    state.proxyStatus = data.configured
+      ? `代理可用，模型：${data.model || 'DeepSeek'}。`
+      : '代理服务在线，但还没有配置服务端 API Key。';
+  } catch (error) {
+    state.proxyStatus = `代理检测失败：${error instanceof Error ? error.message : '未知错误'}。`;
+  } finally {
+    state.proxyCheckPending = false;
+    render();
+  }
 }
 
 async function getAgentAnswer(question: string, history: ChatMessage[]): Promise<string> {
@@ -799,7 +847,8 @@ async function getAgentAnswer(question: string, history: ChatMessage[]): Promise
     });
 
     if (!response.ok) {
-      throw new Error(`代理返回 ${response.status}`);
+      const errorMessage = await readProxyError(response);
+      throw new Error(errorMessage || `代理返回 ${response.status}`);
     }
 
     const data = (await response.json()) as { answer?: string; provider?: string };
@@ -813,5 +862,15 @@ async function getAgentAnswer(question: string, history: ChatMessage[]): Promise
     const fallback = askAgent(state.puzzleId, question).answer;
     state.proxyStatus = `代理不可用，已回退到规则助手：${error instanceof Error ? error.message : '未知错误'}`;
     return fallback;
+  }
+}
+
+async function readProxyError(response: Response): Promise<string> {
+  try {
+    const data = (await response.json()) as { error?: string; status?: number };
+    const statusText = data.status ? `DeepSeek 返回 ${data.status}` : `代理返回 ${response.status}`;
+    return data.error ? `${statusText}：${data.error}` : statusText;
+  } catch {
+    return `代理返回 ${response.status}`;
   }
 }

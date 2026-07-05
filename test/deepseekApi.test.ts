@@ -29,6 +29,24 @@ describe('deepseek api handler', () => {
     expect(response.body).toEqual({ error: 'DeepSeek proxy is not configured.' });
   });
 
+  test('reports proxy health without exposing the server-side key', async () => {
+    process.env.DEEPSEEK_API_KEY = 'unit-test-key';
+    process.env.DEEPSEEK_MODEL = 'deepseek-v4-pro';
+    const response = createResponse();
+
+    await handler(createRequest({ method: 'GET' }), response);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toEqual({
+      ok: true,
+      provider: 'deepseek-proxy',
+      configured: true,
+      model: 'deepseek-v4-pro',
+      maxQuestionLength: 500
+    });
+    expect(JSON.stringify(response.body)).not.toContain('unit-test-key');
+  });
+
   test('blocks direct answer requests before calling DeepSeek', async () => {
     process.env.DEEPSEEK_API_KEY = 'unit-test-key';
     const fetchMock = vi.fn();
@@ -44,15 +62,13 @@ describe('deepseek api handler', () => {
 
   test('redacts leaked target terms from upstream DeepSeek replies', async () => {
     process.env.DEEPSEEK_API_KEY = 'unit-test-key';
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          choices: [{ message: { content: '它是乙醇，结构简式是 CH3CH2OH。' } }]
-        })
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: '它是乙醇，结构简式是 CH3CH2OH。' } }]
       })
-    );
+    });
+    vi.stubGlobal('fetch', fetchMock);
     const response = createResponse();
 
     await handler(createRequest({ question: '它能和金属钠反应吗？' }), response);
@@ -61,15 +77,24 @@ describe('deepseek api handler', () => {
     expect(JSON.stringify(response.body)).not.toContain('乙醇');
     expect(JSON.stringify(response.body)).not.toContain('CH3CH2OH');
     expect(response.body).toMatchObject({ provider: 'deepseek' });
+
+    const upstreamBody = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(upstreamBody).toMatchObject({
+      model: 'deepseek-v4-flash',
+      thinking: { type: 'disabled' },
+      stream: false
+    });
   });
 });
 
-function createRequest(body: { question: string }) {
+function createRequest(options: { question?: string; method?: string } = {}) {
+  const { method = 'POST', ...body } = options;
   return {
-    method: 'POST',
+    method,
     body: {
       puzzleId: 'puzzle-ethanol',
       history: [],
+      question: '能否与金属钠反应？',
       ...body
     },
     headers: {

@@ -26,6 +26,7 @@ interface VercelResponse {
 
 const DEEPSEEK_URL = 'https://api.deepseek.com/chat/completions';
 const DEFAULT_MODEL = 'deepseek-v4-flash';
+const MAX_QUESTION_LENGTH = 500;
 const WINDOW_MS = 10 * 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 30;
 const rateBuckets = new Map<string, { count: number; resetAt: number }>();
@@ -38,8 +39,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
+  if (req.method === 'GET') {
+    res.status(200).json({
+      ok: true,
+      provider: 'deepseek-proxy',
+      configured: Boolean(process.env.DEEPSEEK_API_KEY),
+      model: getModelName(),
+      maxQuestionLength: MAX_QUESTION_LENGTH
+    });
+    return;
+  }
+
   if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Only POST is supported.' });
+    res.status(405).json({ error: 'Only GET, POST, and OPTIONS are supported.' });
     return;
   }
 
@@ -78,8 +90,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         Authorization: `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: process.env.DEEPSEEK_MODEL || DEFAULT_MODEL,
+        model: getModelName(),
         messages: buildDeepSeekMessages(validation.value),
+        thinking: { type: 'disabled' },
         temperature: 0.2,
         max_tokens: 220,
         stream: false
@@ -106,6 +119,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       error: error instanceof Error ? error.message : 'DeepSeek proxy failed.'
     });
   }
+}
+
+function getModelName(): string {
+  return process.env.DEEPSEEK_MODEL || DEFAULT_MODEL;
 }
 
 function applyCors(req: VercelRequest, res: VercelResponse): void {
