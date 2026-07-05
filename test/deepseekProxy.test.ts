@@ -50,6 +50,18 @@ describe('deepseek prompt construction', () => {
     expect(messages[0].content).toContain('乙醇');
     expect(JSON.stringify(messages)).not.toContain('sk-');
   });
+
+  test('allows organic-pair property questions without allowing answer reveal', () => {
+    const messages = buildDeepSeekMessages({
+      puzzleId: 'puzzle-ethanol',
+      question: '它能和乙酸发生反应吗？',
+      history: []
+    });
+    const system = messages[0].content;
+
+    expect(system).toContain('另一个高中常见有机物');
+    expect(system).toContain('不要直接公布目标物名称');
+  });
 });
 
 describe('deepseek guardrails', () => {

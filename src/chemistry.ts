@@ -372,6 +372,20 @@ export function askAgent(puzzleId: string, question: string): AgentReply {
     };
   }
 
+  const otherCompound = matchOtherCompound(normalized, compound);
+  if (otherCompound) {
+    const reaction = getOrganicPairReaction(compound.id, otherCompound.id);
+    const answer = reaction.reacts
+      ? `能。可与${otherCompound.name}发生${reaction.type}。${reaction.reason}${reaction.product ? ` 主要产物：${reaction.product}。` : ''}`
+      : `不能。${reaction.reason}`;
+
+    return {
+      answer: hideTargetFromAnswer(answer, compound),
+      hintLevel: reaction.reacts ? 'strong' : 'medium',
+      matchedTopic: otherCompound.name
+    };
+  }
+
   if (normalized.includes('官能团')) {
     return {
       answer: describeFunctionalGroupWithoutNamingStructure(compound),
@@ -465,6 +479,22 @@ function matchReagent(normalized: string): string | null {
   if (normalized.includes('三氯化铁') || normalized.includes('fecl3') || normalized.includes('紫色')) return 'ferric-chloride';
   if (normalized.includes('氢氧化钠') || normalized.includes('naoh')) return 'sodium-hydroxide';
   return null;
+}
+
+function matchOtherCompound(normalized: string, hiddenCompound: Compound): Compound | null {
+  return (
+    compounds.find((compound) => {
+      if (compound.id === hiddenCompound.id) return false;
+      return compound.aliases.some((alias) => normalized.includes(normalize(alias)));
+    }) ?? null
+  );
+}
+
+function hideTargetFromAnswer(answer: string, compound: Compound): string {
+  return [compound.name, compound.structureFormula].reduce(
+    (safeAnswer, forbidden) => safeAnswer.replaceAll(forbidden, '它'),
+    answer
+  );
 }
 
 function describeFunctionalGroupWithoutNamingStructure(compound: Compound): string {

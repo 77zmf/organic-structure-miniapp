@@ -73,6 +73,23 @@ describe('formula puzzle agent', () => {
     expect(reply.hintLevel).toBe('guardrail');
   });
 
+  test('agent answers whether hidden ethanol can react with acetic acid without revealing target name', () => {
+    const reply = askAgent('puzzle-ethanol', '它能和乙酸发生反应吗？');
+
+    expect(reply.answer).toContain('能');
+    expect(reply.answer).toContain('酯化反应');
+    expect(reply.answer).not.toContain('乙醇');
+    expect(reply.hintLevel).toBe('strong');
+  });
+
+  test('agent answers negative organic-pair questions without revealing target name', () => {
+    const reply = askAgent('puzzle-ethanol', '它能和苯在高中常见条件下反应吗？');
+
+    expect(reply.answer).toContain('不能');
+    expect(reply.answer).not.toContain('乙醇');
+    expect(reply.hintLevel).toBe('medium');
+  });
+
   test('structure guesses accept Chinese names and aliases', () => {
     expect(answerFormulaPuzzle('puzzle-ethanol', '乙醇').correct).toBe(true);
     expect(answerFormulaPuzzle('puzzle-ethanol', '二甲醚').correct).toBe(false);
