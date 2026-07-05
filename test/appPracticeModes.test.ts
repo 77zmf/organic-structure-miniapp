@@ -36,6 +36,15 @@ describe('app learning dimension labels', () => {
     expect(root.innerHTML).toContain('进阶·应用实践');
     expect(root.innerHTML).toContain('高阶·迁移创新');
   });
+
+  test('renames the unsaturation tab to unsaturation index', async () => {
+    const root = createRoot();
+
+    await importApp(root);
+
+    expect(root.innerHTML).toContain('<span>不饱和度</span>');
+    expect(root.innerHTML).not.toContain('<span>不饱和</span>');
+  });
 });
 
 describe('app reagent practice modes', () => {
@@ -48,6 +57,15 @@ describe('app reagent practice modes', () => {
     expect(root.innerHTML).toContain('挑战闯关');
     expect(root.innerHTML).toContain('data-input="self-test-compound"');
     expect(root.innerHTML).toContain('选择有机物');
+  });
+
+  test('does not render compound summary explanations in the basic learning panel', async () => {
+    const root = createRoot();
+
+    await importApp(root);
+
+    expect(root.innerHTML).not.toContain('class="compound-summary"');
+    expect(root.innerHTML).not.toContain('含有羧基，具有酸性');
   });
 
   test('renders phenomenon prediction choices before reagent submission', async () => {
@@ -593,6 +611,7 @@ describe('app method and unsaturation pages', () => {
     unsaturationTab.click();
 
     expect(root.innerHTML).toContain('不饱和度计算');
+    expect(root.innerHTML).toContain('计算方法');
     expect(root.innerHTML).toContain('C<sub>6</sub>H<sub>6</sub>');
     expect(root.innerHTML).toContain('不饱和度为 4');
     expect(root.innerHTML).toContain('苯环');
@@ -713,7 +732,8 @@ describe('app method and unsaturation pages', () => {
     expect(root.innerHTML).toContain('元素组成');
     expect(root.innerHTML).toContain('相对分子质量');
     expect(root.innerHTML).toContain('官能团及碳骨架状况');
-    expect(root.innerHTML).toContain('计算不饱和度');
+    expect(root.innerHTML).not.toContain('计算不饱和度');
+    expect(root.innerHTML).not.toContain('data-method-node="unsaturation"');
     expect(root.innerHTML).toContain('确定有机化合物结构式');
   });
 });
@@ -766,7 +786,8 @@ describe('app method route details', () => {
     methodTab.click();
 
     expect(root.innerHTML).toContain('破案路线图');
-    expect(root.innerHTML).toContain('data-method-node="unsaturation"');
+    expect(root.innerHTML).toContain('data-method-node="composition"');
+    expect(root.innerHTML).not.toContain('data-method-node="unsaturation"');
     expect(root.innerHTML).toContain('能告诉我们');
     expect(root.innerHTML).toContain('还不能确定');
   });
@@ -782,7 +803,7 @@ describe('app method route details', () => {
     await importApp(root);
     methodTab.click();
 
-    expect(root.innerHTML).toContain('C6H6 的不饱和度为 4');
+    expect(root.innerHTML).toContain('元素组成');
 
     structureNode.click();
 
@@ -802,12 +823,12 @@ describe('app method route details', () => {
     await importApp(root);
     methodTab.click();
 
-    expect(root.innerHTML).toContain('C6H6 的不饱和度为 4');
+    expect(root.innerHTML).toContain('元素组成');
 
     unknownNode.click();
 
-    expect(root.innerHTML).toContain('计算不饱和度');
-    expect(root.innerHTML).toContain('C6H6 的不饱和度为 4');
+    expect(root.innerHTML).not.toContain('计算不饱和度');
+    expect(root.innerHTML).toContain('元素组成');
   });
 });
 

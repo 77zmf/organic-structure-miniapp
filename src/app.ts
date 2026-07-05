@@ -167,7 +167,7 @@ const state: AppState = {
   chatPending: false,
   proxyCheckPending: false,
   curiosityQuestionIndex: 0,
-  selectedMethodNodeId: 'unsaturation'
+  selectedMethodNodeId: 'composition'
 };
 
 render();
@@ -198,7 +198,7 @@ function render(): void {
 
       <nav class="mode-tabs" aria-label="学习模式">
         ${modeButton('method', '方法', '结构测定路径', 'map')}
-        ${modeButton('unsaturation', '不饱和', '公式计算', 'calculator')}
+        ${modeButton('unsaturation', '不饱和度', '公式计算', 'calculator')}
         ${modeButton('reagent', '基础·学习理解', '试剂反应', 'beaker')}
         ${modeButton('pair', '进阶·应用实践', '有机物间反应', 'flask-conical')}
         ${modeButton('puzzle', '高阶·迁移创新', '分子式推理', 'brain')}
@@ -337,15 +337,14 @@ function renderMethodMode(): string {
 
           <article class="guide-card">
             <h3>确定有机化合物结构式流程</h3>
-            <div class="flow-board formula-flow" aria-label="确定有机化合物结构式流程示意">
+            <div class="flow-board formula-flow formula-route" aria-label="确定有机化合物结构式流程示意">
               <div class="flow-node main-node">有机化合物分子式</div>
-              <div class="flow-lane two-lane">
-                <div>
-                  ${renderMethodNode('unsaturation', '计算不饱和度')}
+              <div class="formula-branches">
+                <div class="route-branch">
                   <div class="flow-arrow">↓</div>
                   <div class="flow-node">推测化学键类型</div>
                 </div>
-                <div>
+                <div class="route-branch">
                   <span class="flow-tag">化学性质实验或仪器分析图谱</span>
                   <div class="flow-arrow">↓</div>
                   ${renderMethodNode('functional-group', '判断官能团种类及官能团所处位置')}
@@ -424,6 +423,7 @@ function renderUnsaturationMode(): string {
           </label>
         </div>
 
+        ${renderUnsaturationMethodGuide()}
         ${renderUnsaturationPredictions(index)}
 
         <div class="unsaturation-result">
@@ -466,6 +466,26 @@ function renderUnsaturationMode(): string {
             : ''
         }
       </section>
+    </section>
+  `;
+}
+
+function renderUnsaturationMethodGuide(): string {
+  return `
+    <section class="unsaturation-method-card" aria-label="不饱和度计算方法">
+      <div>
+        <p class="section-kicker">计算方法</p>
+        <h3>先把分子式转成不饱和度</h3>
+      </div>
+      <div class="formula-rule-strip">
+        <span>Ω = C + 1 + N / 2 - (H + X) / 2</span>
+        <small>X 表示 F、Cl、Br、I 等卤素；O、S 不影响计算。</small>
+      </div>
+      <ol>
+        <li>只含 C、H、O 时，用 Ω = C + 1 - H / 2。</li>
+        <li>有卤素时，把卤素原子数并入 H；有氮时加 N / 2。</li>
+        <li>结果只能提示双键、三键、环、羰基或苯环的可能性，仍需实验验证。</li>
+      </ol>
     </section>
   `;
 }
@@ -981,7 +1001,6 @@ function renderReagentCompoundPanel(compound: Compound): string {
         <div><dt>结构简式</dt><dd class="chem-formula">${formatChemicalFormula(compound.structureFormula)}</dd></div>
         <div><dt>官能团</dt><dd>${functionalGroupLabels(compound).join('、')}</dd></div>
       </dl>
-      <p class="compound-summary">${formatChemistryText(compound.summary)}</p>
     </section>
   `;
 }

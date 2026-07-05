@@ -488,7 +488,6 @@ button svg {
   overflow-wrap: anywhere;
 }
 
-.compound-summary,
 .hint-line,
 .proxy-status {
   color: var(--muted);
@@ -836,6 +835,20 @@ h2 .chem-formula {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.formula-branches {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+
+.route-branch {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  text-align: center;
+}
+
 .flow-lane > div,
 .flow-merge > div {
   display: grid;
@@ -921,6 +934,7 @@ button.flow-node.final-node {
 }
 
 .flow-arrow {
+  justify-self: center;
   color: var(--blue);
   font-size: 25px;
   font-weight: 900;
@@ -933,6 +947,52 @@ button.flow-node.final-node {
 
 .compact-select {
   width: min(260px, 100%);
+}
+
+.unsaturation-method-card {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.75fr) minmax(260px, 1fr) minmax(260px, 1fr);
+  gap: 14px;
+  align-items: start;
+  margin-bottom: 14px;
+  padding: 16px;
+  border: 1px solid rgba(19, 123, 114, 0.2);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.unsaturation-method-card h3 {
+  color: var(--teal-dark);
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.formula-rule-strip {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid rgba(49, 95, 156, 0.18);
+  border-radius: 8px;
+  background: var(--surface-muted);
+}
+
+.formula-rule-strip span {
+  color: var(--blue);
+  font-weight: 950;
+  line-height: 1.35;
+}
+
+.formula-rule-strip small,
+.unsaturation-method-card li {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.unsaturation-method-card ol {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
 }
 
 .prediction-panel {
@@ -1534,7 +1594,9 @@ button.flow-node.final-node {
 
   .three-lane,
   .two-lane,
-  .flow-merge {
+  .flow-merge,
+  .formula-branches,
+  .unsaturation-method-card {
     grid-template-columns: 1fr;
   }
 }
