@@ -154,14 +154,21 @@ function getLikelyUnsaturationPredictions(index: number): UnsaturationPrediction
   return ['carbon-triple-bond', 'carbon-double-bond', 'carbonyl', 'ring'];
 }
 
+export function getExpectedPhenomena(reaction: ReactionResult): PhenomenonId[] {
+  if (!reaction.reacts) return ['none'];
+  const phenomena: PhenomenonId[] = [];
+
+  if (/银镜/.test(reaction.evidence)) phenomena.push('silver-mirror');
+  if (/CO2|H2|气体/.test(reaction.evidence)) phenomena.push('gas');
+  if (/沉淀/.test(reaction.evidence)) phenomena.push('precipitate');
+  if (/褪色|褪去/.test(reaction.evidence)) phenomena.push('decolorize');
+  if (/显紫|紫色(?!.*褪去)/.test(reaction.evidence)) phenomena.push('purple');
+
+  return phenomena.length > 0 ? phenomena : ['none'];
+}
+
 export function getExpectedPhenomenon(reaction: ReactionResult): PhenomenonId {
-  if (!reaction.reacts) return 'none';
-  if (/银镜/.test(reaction.evidence)) return 'silver-mirror';
-  if (/CO2|H2|气体/.test(reaction.evidence)) return 'gas';
-  if (/沉淀/.test(reaction.evidence)) return 'precipitate';
-  if (/褪色|褪去/.test(reaction.evidence)) return 'decolorize';
-  if (/紫/.test(reaction.evidence)) return 'purple';
-  return 'none';
+  return getExpectedPhenomena(reaction)[0];
 }
 
 export function getPairRoleForCompound(compound: Compound): PairRoleId {

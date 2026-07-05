@@ -47,7 +47,7 @@ import {
 } from './reagentPractice';
 import {
   curiosityQuestions,
-  getExpectedPhenomenon,
+  getExpectedPhenomena,
   getUnsaturationPredictionFeedback,
   methodNodeDetails,
   phenomenonOptions,
@@ -1123,7 +1123,10 @@ function bindEvents(): void {
       if (state.reagentPracticeMode === 'challenge') {
         return;
       }
-      const nextReagentId = button.dataset.reagent ?? state.reagentId;
+      const nextReagentId = button.dataset.reagent;
+      if (!isReagentId(nextReagentId)) {
+        return;
+      }
       if (nextReagentId !== state.reagentId) {
         state.phenomenonPrediction = null;
       }
@@ -1245,6 +1248,10 @@ function isPhenomenonId(value: string | undefined): value is PhenomenonId {
   return value !== undefined && phenomenonOptions.some((option) => option.id === value);
 }
 
+function isReagentId(value: string | undefined): value is string {
+  return value !== undefined && reagents.some((reagent) => reagent.id === value);
+}
+
 function toggleUnsaturationPrediction(prediction: UnsaturationPredictionId): void {
   if (prediction === 'none') {
     state.unsaturationPredictions = state.unsaturationPredictions.includes('none') ? [] : ['none'];
@@ -1359,22 +1366,30 @@ function submitReagentAnswer(): void {
 }
 
 function getPhenomenonPredictionFeedback(reaction: ReturnType<typeof getReagentReaction>): string {
-  const expectedPhenomenon = getExpectedPhenomenon(reaction);
-  const expectedLabel = phenomenonLabel(expectedPhenomenon);
+  const expectedPhenomena = getExpectedPhenomena(reaction);
+  const expectedLabels = expectedPhenomena.map(phenomenonLabel);
 
-  if (state.phenomenonPrediction === expectedPhenomenon) {
-    return `现象预测正确：${expectedLabel}。`;
+  if (state.phenomenonPrediction && expectedPhenomena.includes(state.phenomenonPrediction)) {
+    const selectedLabel = phenomenonLabel(state.phenomenonPrediction);
+    const otherLabels = expectedLabels.filter((label) => label !== selectedLabel);
+    return otherLabels.length > 0
+      ? `现象预测正确：${selectedLabel}；也要留意${formatPhenomenonLabels(otherLabels)}。`
+      : `现象预测正确：${selectedLabel}。`;
   }
 
   if (!state.phenomenonPrediction) {
-    return `现象需要复盘：应观察到${expectedLabel}。`;
+    return `现象需要复盘：应观察到${formatPhenomenonLabels(expectedLabels)}。`;
   }
 
-  return `现象需要复盘：你选${phenomenonLabel(state.phenomenonPrediction)}，应观察到${expectedLabel}。`;
+  return `现象需要复盘：你选${phenomenonLabel(state.phenomenonPrediction)}，应观察到${formatPhenomenonLabels(expectedLabels)}。`;
 }
 
 function phenomenonLabel(phenomenon: PhenomenonId): string {
   return phenomenonOptions.find((option) => option.id === phenomenon)?.label ?? '无明显现象';
+}
+
+function formatPhenomenonLabels(labels: string[]): string {
+  return labels.join('、');
 }
 
 function newPairChallenge(): void {

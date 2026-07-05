@@ -3,6 +3,7 @@ import { findCompoundById, getReagentReaction, type AgentReply } from '../src/ch
 import {
   createEvidenceNoteFromAgentReply,
   functionalGroupRoleLabel,
+  getExpectedPhenomena,
   getExpectedPhenomenon,
   getPairRoleForCompound,
   getUnsaturationPredictionFeedback
@@ -17,6 +18,12 @@ describe('curiosity helper feedback', () => {
     expect(getExpectedPhenomenon(etheneReaction)).toBe('decolorize');
     expect(getExpectedPhenomenon(aldehydeReaction)).toBe('silver-mirror');
     expect(getExpectedPhenomenon(benzeneReaction)).toBe('none');
+  });
+
+  test('keeps mixed reagent phenomena as multiple acceptable observations', () => {
+    const phenolBromineWater = getReagentReaction('phenol', 'bromine-water');
+
+    expect(getExpectedPhenomena(phenolBromineWater)).toEqual(['precipitate', 'decolorize']);
   });
 
   test('keeps unsaturation prediction feedback exploratory instead of absolute', () => {

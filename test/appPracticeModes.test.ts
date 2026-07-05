@@ -116,6 +116,49 @@ describe('app reagent practice modes', () => {
     expect(root.innerHTML).toContain('现象预测正确：褪色');
   });
 
+  test('ignores invalid reagent ids without changing selected reagent', async () => {
+    const invalidReagent = createReagentButton('unknown-reagent');
+    const root = createRoot({ reagentButtons: [invalidReagent.button] });
+
+    await importApp(root);
+
+    expect(root.innerHTML).toContain(
+      'class="choice-chip selected" data-reagent="bromine-ccl4" type="button" aria-pressed="true"'
+    );
+    expect(() => invalidReagent.click()).not.toThrow();
+    expect(root.innerHTML).toContain(
+      'class="choice-chip selected" data-reagent="bromine-ccl4" type="button" aria-pressed="true"'
+    );
+  });
+
+  test('accepts decolorization for phenol with bromine water mixed phenomena', async () => {
+    const compoundInput = createInput('self-test-compound', 'phenol');
+    const bromineWater = createReagentButton('bromine-water');
+    const decolorizePrediction = createPhenomenonButton('decolorize');
+    const yesAnswer = createAnswerButton('yes');
+    const submitReagent = createActionButton('submit-reagent');
+    const root = createRoot({
+      phenomenonButtons: [decolorizePrediction.button],
+      reagentButtons: [bromineWater.button],
+      answerButtons: [yesAnswer.button],
+      actionButtons: [submitReagent.button],
+      inputElements: [compoundInput.input]
+    });
+
+    await importApp(root);
+    compoundInput.inputEvent();
+    bromineWater.click();
+    decolorizePrediction.click();
+    yesAnswer.click();
+    submitReagent.click();
+
+    expect(root.innerHTML).toContain('正确：会反应');
+    expect(root.innerHTML).toContain('现象预测正确');
+    expect(root.innerHTML).toContain('褪色');
+    expect(root.innerHTML).toContain('白色沉淀');
+    expect(root.innerHTML).not.toContain('现象需要复盘');
+  });
+
   test('advancing reagent challenge resets phenomenon prediction and feedback', async () => {
     const challengeMode = createReagentPracticeModeButton('challenge');
     const decolorizePrediction = createPhenomenonButton('decolorize');
