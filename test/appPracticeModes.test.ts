@@ -485,14 +485,16 @@ describe('app chemistry notation and advanced puzzle clues', () => {
     expect(root.innerHTML).not.toContain('已给出分子式');
   });
 
-  test('renders gaokao bank, locked 3d reveal, and evidence board in puzzle mode', async () => {
+  test('renders an anonymous exam prompt, locked 3d reveal, and evidence board in puzzle mode', async () => {
     const puzzleTab = createModeButton('puzzle');
     const root = createRoot({ modeButtons: [puzzleTab.button] });
 
     await importApp(root);
     puzzleTab.click();
 
-    expect(root.innerHTML).toContain('高考题库');
+    expect(root.innerHTML).toContain('综合推断题');
+    expect(root.innerHTML).toContain('某有机物 A');
+    expect(root.innerHTML).toContain('换一题');
     expect(root.innerHTML).toContain('3D 模型');
     expect(root.innerHTML).toContain('答对后揭晓三维结构');
     expect(root.innerHTML).toContain('证据板');
@@ -500,28 +502,28 @@ describe('app chemistry notation and advanced puzzle clues', () => {
     expect(root.innerHTML).toContain('排除方向');
     expect(root.innerHTML).toContain('当前猜想');
     expect(root.innerHTML).toContain('C<sub>4</sub>H<sub>10</sub>O');
+    expect(root.innerHTML).not.toContain('高考题库');
+    expect(root.innerHTML).not.toContain('选择高考题');
+    expect(root.innerHTML).not.toContain('考查重点');
+    expect(root.innerHTML).not.toContain('公开线索');
+    expect(root.innerHTML).not.toContain('C4H10O 的高考式结构推断');
+    expect(root.innerHTML).not.toContain('在多个醇和醚的候选结构中');
+    expect(root.innerHTML).not.toContain('同分异构体、红外识别官能团、核磁氢谱面积比');
+    expect(root.innerHTML).not.toContain('红外有宽强 O-H 吸收');
     expect(root.innerHTML).not.toContain('quick-question');
   });
 
-  test('selects a gaokao question and updates the public formula puzzle', async () => {
+  test('does not expose gaokao question titles through a student-facing selector', async () => {
     const puzzleTab = createModeButton('puzzle');
-    const gaokaoQuestionInput = createInput('gaokao-question', 'gk-phenol-tests');
-    const root = createRoot({
-      modeButtons: [puzzleTab.button],
-      inputElements: [gaokaoQuestionInput.input]
-    });
+    const root = createRoot({ modeButtons: [puzzleTab.button] });
 
     await importApp(root);
     puzzleTab.click();
 
-    expect(getSelectedGaokaoQuestionId(root.innerHTML)).toBe('gk-ir-nmr-butanol');
-
-    gaokaoQuestionInput.input.value = 'gk-phenol-tests';
-    gaokaoQuestionInput.inputEvent();
-
-    expect(getSelectedGaokaoQuestionId(root.innerHTML)).toBe('gk-phenol-tests');
-    expect(root.innerHTML).toContain('酚羟基与苯环活化');
-    expect(root.innerHTML).toContain('C<sub>6</sub>H<sub>6</sub>O');
+    expect(root.innerHTML).not.toContain('data-input="gaokao-question"');
+    expect(root.innerHTML).not.toContain('酚羟基与苯环活化');
+    expect(root.innerHTML).not.toContain('红外与氢谱筛选醇类同分异构体');
+    expect(root.innerHTML).not.toContain('甲苯制备苯甲酸苄酯的路线判断');
   });
 
   test('random gaokao question picks a different question when possible', async () => {
@@ -535,11 +537,13 @@ describe('app chemistry notation and advanced puzzle clues', () => {
     await importApp(root);
     puzzleTab.click();
 
-    expect(getSelectedGaokaoQuestionId(root.innerHTML)).toBe('gk-ir-nmr-butanol');
+    expect(getCurrentGaokaoQuestionId(root.innerHTML)).toBe('gk-ir-nmr-butanol');
 
     randomQuestion.click();
 
-    expect(getSelectedGaokaoQuestionId(root.innerHTML)).not.toBe('gk-ir-nmr-butanol');
+    expect(getCurrentGaokaoQuestionId(root.innerHTML)).not.toBe('gk-ir-nmr-butanol');
+    expect(root.innerHTML).not.toContain('高考题库');
+    expect(root.innerHTML).not.toContain('选择高考题');
   });
 
   test('wrong structure guesses add a current-guess evidence note', async () => {
@@ -1110,12 +1114,12 @@ function matchHtmlAttribute(html: string, attribute: string): string {
   return match[1];
 }
 
-function getSelectedGaokaoQuestionId(html: string): string {
-  const selectedMatch = html.match(/<option value="([^"]+)" selected>/);
-  if (!selectedMatch) {
-    throw new Error('Missing selected gaokao question option');
+function getCurrentGaokaoQuestionId(html: string): string {
+  const currentMatch = html.match(/data-current-gaokao-question="([^"]+)"/);
+  if (!currentMatch) {
+    throw new Error('Missing current gaokao question marker');
   }
-  return selectedMatch[1];
+  return currentMatch[1];
 }
 
 function countOccurrences(value: string, needle: string): number {

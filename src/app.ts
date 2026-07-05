@@ -850,40 +850,36 @@ function renderPuzzleMode(): string {
 }
 
 function renderGaokaoQuestionPanel(question: GaokaoQuestion): string {
+  const questionNumber = anonymousQuestionNumber(question);
   return `
-    <section class="gaokao-panel" aria-label="高考题库">
+    <section class="gaokao-panel" aria-label="匿名综合推断题" data-current-gaokao-question="${escapeHtml(question.id)}">
       <div class="panel-title-row">
         <div>
-          <p class="section-kicker">高考题库</p>
-          <h3>${escapeHtml(question.title)}</h3>
+          <p class="section-kicker">综合推断题</p>
+          <h3>题目 ${questionNumber}</h3>
         </div>
         <button class="icon-text-button" data-action="random-gaokao-question" type="button">
           <i data-lucide="shuffle" aria-hidden="true"></i>
-          随机题
+          换一题
         </button>
       </div>
-      <label class="select-control compact-select">
-        <span>选择高考题</span>
-        <select data-input="gaokao-question" aria-label="选择高考题">
-          ${gaokaoQuestions
-            .map(
-              (item) => `
-                <option value="${escapeHtml(item.id)}"${item.id === question.id ? ' selected' : ''}>
-                  ${escapeHtml(item.title)}
-                </option>
-              `
-            )
-            .join('')}
-        </select>
-      </label>
       <dl class="gaokao-facts">
-        <div><dt>分子式</dt><dd class="chem-formula">${formatChemicalFormula(question.formula)}</dd></div>
-        <div><dt>考查重点</dt><dd>${question.examFocus.map((item) => escapeHtml(item)).join('、')}</dd></div>
-        <div><dt>任务</dt><dd>${formatChemistryText(question.task)}</dd></div>
-        <div><dt>公开线索</dt><dd>${question.publicClues.map((item) => formatChemistryText(item)).join('；')}</dd></div>
+        <div>
+          <dt>题干</dt>
+          <dd>某有机物 A 的分子式为 <span class="chem-formula">${formatChemicalFormula(question.formula)}</span>。请通过右侧实验性质问答推断 A 的结构，并写出关键判断依据。</dd>
+        </div>
+        <div>
+          <dt>作答</dt>
+          <dd>先提出实验性质问题，再在下方输入结构名称或结构简式。</dd>
+        </div>
       </dl>
     </section>
   `;
+}
+
+function anonymousQuestionNumber(question: GaokaoQuestion): string {
+  const index = gaokaoQuestions.findIndex((item) => item.id === question.id);
+  return String(index >= 0 ? index + 1 : 1).padStart(2, '0');
 }
 
 function quickQuestion(text: string): string {
