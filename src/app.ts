@@ -29,6 +29,7 @@ import {
 } from './chemistry';
 import { getMoleculeModel, type DisplayMode, type MoleculeModel } from './moleculeModels';
 import { createMoleculeViewer, type MoleculeViewer } from './moleculeViewer';
+import { createRandomPairQuestion, selectPairCompound, type PairSide } from './pairPractice';
 import { createPuzzleUnlockState, updatePuzzleUnlockWithGuess } from './puzzleUnlock';
 import { resolveInitialProxyUrl } from './proxyConfig';
 import {
@@ -83,6 +84,7 @@ const mountedMoleculeViewers: MoleculeViewer[] = [];
 const initialPuzzleUnlock = createPuzzleUnlockState('puzzle-ethanol');
 const challengeCompoundIds = compounds.map((compound) => compound.id);
 const challengeReagentIds = reagents.map((reagent) => reagent.id);
+const pairCompoundIds = compounds.map((compound) => compound.id);
 
 const state: AppState = {
   mode: 'reagent',
@@ -363,9 +365,9 @@ function renderPairMode(): string {
   return `
     <section class="workspace two-column pair-layout" aria-label="进阶有机物间反应判断">
       <section class="compound-pair">
-        ${renderCompactCompound(first)}
+        ${renderSelectablePairCompound(first, 'first', '选择左侧分子')}
         <div class="reaction-mark">+</div>
-        ${renderCompactCompound(second)}
+        ${renderSelectablePairCompound(second, 'second', '选择右侧分子')}
       </section>
 
       <section class="task-panel">
@@ -376,7 +378,7 @@ function renderPairMode(): string {
           </div>
           <button class="icon-text-button" data-action="new-pair" type="button">
             <i data-lucide="refresh-cw" aria-hidden="true"></i>
-            换一组
+            随机一组
           </button>
         </div>
 
@@ -607,6 +609,34 @@ function renderCompactCompound(compound: Compound): string {
   `;
 }
 
+function renderSelectablePairCompound(compound: Compound, side: PairSide, label: string): string {
+  const otherId = side === 'first' ? state.pairSecondId : state.pairFirstId;
+  return `
+    <article class="compound-mini selectable-compound-mini">
+      <label class="select-control pair-select-control">
+        <span>${label}</span>
+        <select data-input="${side === 'first' ? 'pair-first-compound' : 'pair-second-compound'}" aria-label="${label}">
+          ${compounds
+            .map(
+              (item) => `
+                <option value="${item.id}" ${item.id === compound.id ? 'selected' : ''} ${item.id === otherId ? 'disabled' : ''}>
+                  ${item.name}
+                </option>
+              `
+            )
+            .join('')}
+        </select>
+      </label>
+      <div>
+        <p>${compound.formula}</p>
+        <h3>${compound.name}</h3>
+      </div>
+      ${renderMoleculeViewerHost(compound.id, `${compound.name}三维结构`, 'compact')}
+      <span>${compound.structureFormula}</span>
+    </article>
+  `;
+}
+
 function renderPuzzleVisualization(puzzle: FormulaPuzzle): string {
   const spec = getPuzzleMoleculeViewerMountSpec(
     state.puzzleUnlocked,
@@ -746,6 +776,10 @@ function bindEvents(): void {
         render();
         return;
       }
+      if (kind === 'pair-first-compound' || kind === 'pair-second-compound') {
+        selectPair(sideFromPairInput(kind), input.value);
+        return;
+      }
       if (kind === 'pair-type') state.pairTypeGuess = input.value;
       if (kind === 'chat') state.chatInput = input.value;
       if (kind === 'structure-guess') state.structureGuess = input.value;
@@ -880,15 +914,39 @@ function submitReagentAnswer(): void {
 }
 
 function newPairChallenge(): void {
-  const first = pick(compounds.filter((compound) => compound.id !== 'ethyl-acetate'));
-  const candidates = compounds.filter((compound) => compound.id !== first.id);
-  const second = pick(candidates);
-  state.pairFirstId = first.id;
-  state.pairSecondId = second.id;
+  const question = createRandomPairQuestion(pairCompoundIds);
+  state.pairFirstId = question.firstId;
+  state.pairSecondId = question.secondId;
   state.pairAnswer = null;
   state.pairTypeGuess = '';
   state.pairFeedback = '';
   render();
+}
+
+function selectPair(side: PairSide, compoundId: string): void {
+  const next = selectPairCompound(
+    {
+      firstId: state.pairFirstId,
+      secondId: state.pairSecondId,
+      answer: state.pairAnswer,
+      typeGuess: state.pairTypeGuess,
+      feedback: state.pairFeedback
+    },
+    side,
+    compoundId,
+    pairCompoundIds
+  );
+
+  state.pairFirstId = next.firstId;
+  state.pairSecondId = next.secondId;
+  state.pairAnswer = next.answer;
+  state.pairTypeGuess = next.typeGuess;
+  state.pairFeedback = next.feedback;
+  render();
+}
+
+function sideFromPairInput(kind: string): PairSide {
+  return kind === 'pair-first-compound' ? 'first' : 'second';
 }
 
 function submitPairAnswer(): void {

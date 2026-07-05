@@ -36,6 +36,22 @@ describe('app reagent practice modes', () => {
   });
 });
 
+describe('app pair classroom selection', () => {
+  test('renders molecule pickers for both sides in pair mode', async () => {
+    const pairTab = createModeButton('pair');
+    const root = createRoot({ modeButtons: [pairTab.button] });
+
+    await importApp(root);
+    pairTab.click();
+
+    expect(root.innerHTML).toContain('选择左侧分子');
+    expect(root.innerHTML).toContain('选择右侧分子');
+    expect(root.innerHTML).toContain('data-input="pair-first-compound"');
+    expect(root.innerHTML).toContain('data-input="pair-second-compound"');
+    expect(root.innerHTML).toContain('随机一组');
+  });
+});
+
 async function importApp(root: HTMLDivElement): Promise<void> {
   vi.stubGlobal('document', {
     querySelector: (selector: string) => (selector === '#app' ? root : null)
@@ -51,9 +67,34 @@ async function importApp(root: HTMLDivElement): Promise<void> {
   await import('../src/app');
 }
 
-function createRoot(): HTMLDivElement {
+interface FakeRootOptions {
+  modeButtons?: HTMLButtonElement[];
+}
+
+function createRoot(options: FakeRootOptions = {}): HTMLDivElement {
   return {
     innerHTML: '',
-    querySelectorAll: vi.fn(() => [])
+    querySelectorAll: vi.fn((selector: string) => {
+      if (selector === '[data-mode]') {
+        return options.modeButtons ?? [];
+      }
+      return [];
+    })
   } as unknown as HTMLDivElement;
+}
+
+function createModeButton(mode: string): {
+  button: HTMLButtonElement;
+  click: () => void;
+} {
+  let listener: (() => void) | null = null;
+  return {
+    button: {
+      dataset: { mode },
+      addEventListener: vi.fn((eventName: string, callback: () => void) => {
+        if (eventName === 'click') listener = callback;
+      })
+    } as unknown as HTMLButtonElement,
+    click: () => listener?.()
+  };
 }

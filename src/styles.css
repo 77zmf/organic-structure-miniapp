@@ -693,6 +693,14 @@ button svg {
   padding: 16px;
 }
 
+.selectable-compound-mini {
+  align-content: start;
+}
+
+.pair-select-control {
+  margin-bottom: 2px;
+}
+
 .compound-mini p,
 .compound-mini span {
   color: var(--muted);
