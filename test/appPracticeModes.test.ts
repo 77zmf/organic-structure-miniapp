@@ -86,6 +86,64 @@ describe('app method and unsaturation pages', () => {
     expect(root.innerHTML).toContain('苯环');
   });
 
+  test('renders unsaturation prediction controls before feedback', async () => {
+    const unsaturationTab = createModeButton('unsaturation');
+    const root = createRoot({ modeButtons: [unsaturationTab.button] });
+
+    await importApp(root);
+    unsaturationTab.click();
+
+    expect(root.innerHTML).toContain('先猜结构可能性');
+    expect(root.innerHTML).toContain('data-unsaturation-prediction="benzene-ring"');
+    expect(root.innerHTML).toContain('仍需实验验证');
+    expect(root.innerHTML.indexOf('先猜结构可能性')).toBeLessThan(root.innerHTML.indexOf('class="unsaturation-result"'));
+  });
+
+  test('toggles unsaturation prediction selection and feedback', async () => {
+    const unsaturationTab = createModeButton('unsaturation');
+    const benzenePrediction = createUnsaturationPredictionButton('benzene-ring');
+    const root = createRoot({
+      modeButtons: [unsaturationTab.button],
+      unsaturationPredictionButtons: [benzenePrediction.button]
+    });
+
+    await importApp(root);
+    unsaturationTab.click();
+
+    expect(root.innerHTML).toContain(
+      'class="choice-chip selected" data-unsaturation-prediction="benzene-ring" type="button" aria-pressed="true"'
+    );
+
+    benzenePrediction.click();
+
+    expect(root.innerHTML).toContain(
+      'class="choice-chip" data-unsaturation-prediction="benzene-ring" type="button" aria-pressed="false"'
+    );
+    expect(root.innerHTML).toContain('先对 C<sub>6</sub>H<sub>6</sub> 可能隐藏的结构做一个预测');
+  });
+
+  test('resets unsaturation predictions when the formula changes', async () => {
+    const unsaturationTab = createModeButton('unsaturation');
+    const formulaInput = createInput('unsaturation-formula', 'C2H4');
+    const root = createRoot({
+      modeButtons: [unsaturationTab.button],
+      inputElements: [formulaInput.input]
+    });
+
+    await importApp(root);
+    unsaturationTab.click();
+
+    expect(root.innerHTML).toContain('仍需实验验证');
+
+    formulaInput.input.value = 'C2H4';
+    formulaInput.inputEvent();
+
+    expect(root.innerHTML).toContain('先对 C<sub>2</sub>H<sub>4</sub> 可能隐藏的结构做一个预测');
+    expect(root.innerHTML).toContain(
+      'class="choice-chip" data-unsaturation-prediction="benzene-ring" type="button" aria-pressed="false"'
+    );
+  });
+
   test('renders textbook method guide flows', async () => {
     const methodTab = createModeButton('method');
     const root = createRoot({ modeButtons: [methodTab.button] });
@@ -214,6 +272,8 @@ interface FakeRootOptions {
   modeButtons?: HTMLButtonElement[];
   actionButtons?: HTMLButtonElement[];
   methodNodeButtons?: HTMLButtonElement[];
+  unsaturationPredictionButtons?: HTMLButtonElement[];
+  inputElements?: HTMLInputElement[];
 }
 
 function createRoot(options: FakeRootOptions = {}): HTMLDivElement {
@@ -228,6 +288,12 @@ function createRoot(options: FakeRootOptions = {}): HTMLDivElement {
       }
       if (selector === '[data-method-node]') {
         return options.methodNodeButtons ?? [];
+      }
+      if (selector === '[data-unsaturation-prediction]') {
+        return options.unsaturationPredictionButtons ?? [];
+      }
+      if (selector === '[data-input]') {
+        return options.inputElements ?? [];
       }
       return [];
     })
@@ -279,5 +345,38 @@ function createMethodNodeButton(methodNode: string): {
       })
     } as unknown as HTMLButtonElement,
     click: () => listener?.()
+  };
+}
+
+function createUnsaturationPredictionButton(unsaturationPrediction: string): {
+  button: HTMLButtonElement;
+  click: () => void;
+} {
+  let listener: (() => void) | null = null;
+  return {
+    button: {
+      dataset: { unsaturationPrediction },
+      addEventListener: vi.fn((eventName: string, callback: () => void) => {
+        if (eventName === 'click') listener = callback;
+      })
+    } as unknown as HTMLButtonElement,
+    click: () => listener?.()
+  };
+}
+
+function createInput(input: string, value: string): {
+  input: HTMLInputElement;
+  inputEvent: () => void;
+} {
+  let listener: (() => void) | null = null;
+  return {
+    input: {
+      dataset: { input },
+      value,
+      addEventListener: vi.fn((eventName: string, callback: () => void) => {
+        if (eventName === 'input') listener = callback;
+      })
+    } as unknown as HTMLInputElement,
+    inputEvent: () => listener?.()
   };
 }

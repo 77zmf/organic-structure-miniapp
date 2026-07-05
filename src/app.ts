@@ -45,7 +45,13 @@ import {
   type ChallengeSession,
   type ReagentPracticeMode
 } from './reagentPractice';
-import { curiosityQuestions, methodNodeDetails } from './curiosity';
+import {
+  curiosityQuestions,
+  getUnsaturationPredictionFeedback,
+  methodNodeDetails,
+  type UnsaturationPredictionId,
+  unsaturationPredictionOptions
+} from './curiosity';
 
 type Mode = 'method' | 'unsaturation' | 'reagent' | 'pair' | 'puzzle';
 type YesNo = 'yes' | 'no' | null;
@@ -72,6 +78,7 @@ interface AppState {
   puzzleUnlocked: boolean;
   puzzleUnlockedCompoundId: string | null;
   unsaturationFormula: string;
+  unsaturationPredictions: UnsaturationPredictionId[];
   viewerDisplayMode: DisplayMode;
   highlightFunctionalGroup: boolean;
   proxyUrl: string;
@@ -115,6 +122,7 @@ const state: AppState = {
   puzzleUnlocked: initialPuzzleUnlock.unlocked,
   puzzleUnlockedCompoundId: initialPuzzleUnlock.unlockedCompoundId,
   unsaturationFormula: 'C6H6',
+  unsaturationPredictions: ['benzene-ring'],
   viewerDisplayMode: 'ball-stick',
   highlightFunctionalGroup: true,
   proxyUrl: getInitialProxyUrl(),
@@ -383,6 +391,8 @@ function renderUnsaturationMode(): string {
           </label>
         </div>
 
+        ${renderUnsaturationPredictions(index)}
+
         <div class="unsaturation-result">
           <span class="chem-formula">${formattedFormula}</span>
           <strong>不饱和度为 ${formatIndex(index)}</strong>
@@ -423,6 +433,37 @@ function renderUnsaturationMode(): string {
             : ''
         }
       </section>
+    </section>
+  `;
+}
+
+function renderUnsaturationPredictions(index: number): string {
+  const feedback = getUnsaturationPredictionFeedback(
+    state.unsaturationFormula,
+    index,
+    state.unsaturationPredictions
+  );
+
+  return `
+    <section class="prediction-panel" aria-label="先猜结构可能性">
+      <div class="prediction-title-row">
+        <p class="section-kicker">先猜结构可能性</p>
+        <h3>先猜结构可能性</h3>
+      </div>
+      <div class="prediction-grid">
+        ${unsaturationPredictionOptions
+          .map((option) => {
+            const selected = state.unsaturationPredictions.includes(option.id);
+            return `
+              <button class="choice-chip${selected ? ' selected' : ''}" data-unsaturation-prediction="${option.id}" type="button" aria-pressed="${selected}">
+                <span>${escapeHtml(option.label)}</span>
+                <small>${escapeHtml(option.detail)}</small>
+              </button>
+            `;
+          })
+          .join('')}
+      </div>
+      <p class="prediction-feedback">${formatChemistryText(feedback)}</p>
     </section>
   `;
 }
@@ -1021,6 +1062,17 @@ function bindEvents(): void {
     });
   });
 
+  appRoot.querySelectorAll<HTMLButtonElement>('[data-unsaturation-prediction]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const prediction = button.dataset.unsaturationPrediction;
+      if (!isUnsaturationPredictionId(prediction)) {
+        return;
+      }
+
+      toggleUnsaturationPrediction(prediction);
+    });
+  });
+
   appRoot.querySelectorAll<HTMLButtonElement>('[data-reagent]').forEach((button) => {
     button.addEventListener('click', () => {
       if (state.reagentPracticeMode === 'challenge') {
@@ -1074,6 +1126,7 @@ function bindEvents(): void {
       }
       if (kind === 'unsaturation-formula') {
         state.unsaturationFormula = input.value;
+        state.unsaturationPredictions = [];
         render();
         return;
       }
@@ -1132,6 +1185,19 @@ function nextCuriosityQuestion(): void {
 
 function isMethodNodeId(value: string | undefined): value is string {
   return value !== undefined && methodNodeDetails.some((node) => node.id === value);
+}
+
+function isUnsaturationPredictionId(value: string | undefined): value is UnsaturationPredictionId {
+  return value !== undefined && unsaturationPredictionOptions.some((option) => option.id === value);
+}
+
+function toggleUnsaturationPrediction(prediction: UnsaturationPredictionId): void {
+  if (state.unsaturationPredictions.includes(prediction)) {
+    state.unsaturationPredictions = state.unsaturationPredictions.filter((item) => item !== prediction);
+  } else {
+    state.unsaturationPredictions = [...state.unsaturationPredictions, prediction];
+  }
+  render();
 }
 
 function setReagentPracticeMode(mode: ReagentPracticeMode): void {

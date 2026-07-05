@@ -935,6 +935,45 @@ button.flow-node.final-node {
   width: min(260px, 100%);
 }
 
+.prediction-panel {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 16px;
+  border: 1px solid rgba(49, 95, 156, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(49, 95, 156, 0.08), transparent 10px),
+    var(--surface-muted);
+}
+
+.prediction-title-row {
+  display: grid;
+  gap: 4px;
+}
+
+.prediction-title-row h3 {
+  color: var(--teal-dark);
+  font-size: 18px;
+}
+
+.prediction-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.prediction-feedback {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid rgba(198, 134, 31, 0.24);
+  border-radius: 8px;
+  background: #fff7e8;
+  color: #745014;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
 .unsaturation-result {
   display: grid;
   gap: 8px;
@@ -1294,9 +1333,16 @@ button.flow-node.final-node {
   .two-column,
   .puzzle-layout,
   .guide-grid,
-  .unsaturation-grid,
   .compound-pair,
   .compound-heading-row {
+    grid-template-columns: 1fr;
+  }
+
+  .prediction-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .unsaturation-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1405,6 +1451,10 @@ button.flow-node.final-node {
   }
 
   .answer-row {
+    grid-template-columns: 1fr;
+  }
+
+  .prediction-grid {
     grid-template-columns: 1fr;
   }
 
