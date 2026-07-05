@@ -35,7 +35,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -50,14 +51,16 @@ button {
 }
 
 button:disabled,
-input:disabled {
+input:disabled,
+select:disabled {
   cursor: not-allowed;
   opacity: 0.58;
 }
 
 button:focus-visible,
 a:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible {
   outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
@@ -299,6 +302,40 @@ button svg {
   padding: 18px;
 }
 
+.compound-heading-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.48fr);
+  gap: 14px;
+  align-items: end;
+}
+
+.compound-heading-row > div {
+  min-width: 0;
+}
+
+.select-control {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.select-control span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.select-control select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 36px 0 12px;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 800;
+}
+
 .panel-title-row {
   display: flex;
   align-items: flex-start;
@@ -433,6 +470,111 @@ button svg {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
+}
+
+.practice-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.practice-mode-button {
+  display: grid;
+  gap: 4px;
+  min-height: 64px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+}
+
+.practice-mode-button span {
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.practice-mode-button small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.practice-mode-button:hover,
+.practice-mode-button.active {
+  border-color: rgba(19, 123, 114, 0.46);
+  background: var(--teal-soft);
+}
+
+.challenge-status {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 12px;
+  border: 1px solid rgba(19, 123, 114, 0.2);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(19, 123, 114, 0.1), rgba(49, 95, 156, 0.06));
+}
+
+.challenge-status div:not(.challenge-progress) {
+  display: grid;
+  gap: 3px;
+}
+
+.challenge-status span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.challenge-status strong {
+  color: var(--teal-dark);
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.challenge-progress {
+  grid-column: 1 / -1;
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: inset 0 0 0 1px rgba(19, 123, 114, 0.13);
+}
+
+.challenge-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--teal);
+}
+
+.challenge-complete {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid #c8e9d7;
+  border-radius: 8px;
+  background: #e9f7ef;
+}
+
+.challenge-complete strong {
+  color: var(--teal-dark);
+  font-size: 18px;
+}
+
+.challenge-complete p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.challenge-next-action {
+  width: 100%;
+  margin-top: 12px;
 }
 
 .choice-chip {
@@ -767,7 +909,8 @@ button svg {
   .mode-tabs,
   .two-column,
   .puzzle-layout,
-  .compound-pair {
+  .compound-pair,
+  .compound-heading-row {
     grid-template-columns: 1fr;
   }
 
@@ -841,7 +984,9 @@ button svg {
   }
 
   .inline-form,
-  .chat-input-row {
+  .chat-input-row,
+  .practice-switch,
+  .challenge-status {
     grid-template-columns: 1fr;
   }
 

@@ -31,6 +31,15 @@ import { getMoleculeModel, type DisplayMode, type MoleculeModel } from './molecu
 import { createMoleculeViewer, type MoleculeViewer } from './moleculeViewer';
 import { createPuzzleUnlockState, updatePuzzleUnlockWithGuess } from './puzzleUnlock';
 import { resolveInitialProxyUrl } from './proxyConfig';
+import {
+  advanceChallenge,
+  createChallengeSession,
+  evaluateChallengeAnswer,
+  getCurrentChallengeQuestion,
+  selectSelfTestCompound,
+  type ChallengeSession,
+  type ReagentPracticeMode
+} from './reagentPractice';
 
 type Mode = 'reagent' | 'pair' | 'puzzle';
 type YesNo = 'yes' | 'no' | null;
@@ -42,6 +51,8 @@ interface ChatMessage {
 
 interface AppState {
   mode: Mode;
+  reagentPracticeMode: ReagentPracticeMode;
+  reagentChallengeSession: ChallengeSession;
   reagentCompoundId: string;
   reagentId: string;
   reagentAnswer: YesNo;
@@ -70,9 +81,13 @@ const appRoot = getAppRoot();
 let chatRequestId = 0;
 const mountedMoleculeViewers: MoleculeViewer[] = [];
 const initialPuzzleUnlock = createPuzzleUnlockState('puzzle-ethanol');
+const challengeCompoundIds = compounds.map((compound) => compound.id);
+const challengeReagentIds = reagents.map((reagent) => reagent.id);
 
 const state: AppState = {
   mode: 'reagent',
+  reagentPracticeMode: 'self-test',
+  reagentChallengeSession: createReagentChallengeSession(),
   reagentCompoundId: 'ethene',
   reagentId: 'bromine-ccl4',
   reagentAnswer: null,
@@ -279,50 +294,63 @@ function renderMoleculeViewerFallback(container: HTMLElement): void {
 function renderReagentMode(): string {
   const compound = findCompoundById(state.reagentCompoundId);
   const reagent = findReagentById(state.reagentId);
+  const isChallenge = state.reagentPracticeMode === 'challenge';
+  const challengeComplete = isChallenge && state.reagentChallengeSession.completed;
+  const challengePassed = isChallenge && state.reagentChallengeSession.canAdvance;
 
   return `
     <section class="workspace two-column" aria-label="基础试剂反应判断">
-      ${renderCompoundPanel(compound)}
+      ${renderReagentCompoundPanel(compound)}
       <section class="task-panel">
         <div class="panel-title-row">
           <div>
             <p class="section-kicker">基础判断</p>
-            <h2>${compound.name} 与试剂</h2>
+            <h2>${isChallenge ? challengeTitle() : `${compound.name} 与试剂`}</h2>
           </div>
-          <button class="icon-text-button" data-action="new-reagent" type="button">
+          <button class="icon-text-button" data-action="${isChallenge ? 'restart-reagent-challenge' : 'new-reagent'}" type="button">
             <i data-lucide="shuffle" aria-hidden="true"></i>
-            下一题
+            ${isChallenge ? '重开挑战' : '随机一题'}
           </button>
         </div>
 
-        <div class="selector-grid">
-          ${reagents
-            .map(
-              (item) => `
-                <button class="choice-chip ${item.id === state.reagentId ? 'selected' : ''}" data-reagent="${item.id}" type="button" aria-pressed="${item.id === state.reagentId}">
-                  <span>${item.name}</span>
-                  <small>${item.prompt}</small>
+        ${renderReagentPracticeSwitch()}
+        ${isChallenge ? renderChallengeStatus() : ''}
+
+        ${
+          challengeComplete
+            ? renderChallengeComplete()
+            : `
+              <div class="selector-grid">
+                ${reagents
+                  .map(
+                    (item) => `
+                      <button class="choice-chip ${item.id === state.reagentId ? 'selected' : ''}" data-reagent="${item.id}" type="button" aria-pressed="${item.id === state.reagentId}" ${isChallenge ? 'disabled' : ''}>
+                        <span>${item.name}</span>
+                        <small>${item.prompt}</small>
+                      </button>
+                    `
+                  )
+                  .join('')}
+              </div>
+
+              <div class="answer-row" aria-label="反应判断">
+                <button class="judge-button ${state.reagentAnswer === 'yes' ? 'selected yes' : ''}" data-answer="yes" type="button" aria-pressed="${state.reagentAnswer === 'yes'}" ${challengePassed ? 'disabled' : ''}>
+                  会反应
                 </button>
-              `
-            )
-            .join('')}
-        </div>
+                <button class="judge-button ${state.reagentAnswer === 'no' ? 'selected no' : ''}" data-answer="no" type="button" aria-pressed="${state.reagentAnswer === 'no'}" ${challengePassed ? 'disabled' : ''}>
+                  不反应
+                </button>
+              </div>
 
-        <div class="answer-row" aria-label="反应判断">
-          <button class="judge-button ${state.reagentAnswer === 'yes' ? 'selected yes' : ''}" data-answer="yes" type="button" aria-pressed="${state.reagentAnswer === 'yes'}">
-            会反应
-          </button>
-          <button class="judge-button ${state.reagentAnswer === 'no' ? 'selected no' : ''}" data-answer="no" type="button" aria-pressed="${state.reagentAnswer === 'no'}">
-            不反应
-          </button>
-        </div>
-
-        <button class="primary-action" data-action="submit-reagent" type="button">
-          <i data-lucide="check-circle-2" aria-hidden="true"></i>
-          提交判断：${reagent.name}
-        </button>
+              <button class="primary-action" data-action="submit-reagent" type="button" ${challengePassed ? 'disabled' : ''}>
+                <i data-lucide="check-circle-2" aria-hidden="true"></i>
+                提交判断：${reagent.name}
+              </button>
+            `
+        }
 
         ${feedbackBlock(state.reagentFeedback)}
+        ${renderChallengeAdvanceAction()}
       </section>
     </section>
   `;
@@ -453,11 +481,35 @@ function quickQuestion(text: string): string {
   return `<button class="quick-question" data-question="${escapeHtml(text)}" type="button" ${state.chatPending ? 'disabled' : ''}>${text}</button>`;
 }
 
-function renderCompoundPanel(compound: Compound): string {
+function renderReagentCompoundPanel(compound: Compound): string {
   return `
     <section class="compound-panel">
-      <p class="section-kicker">当前有机物</p>
-      <h2>${compound.name}</h2>
+      <div class="compound-heading-row">
+        <div>
+          <p class="section-kicker">当前有机物</p>
+          <h2>${compound.name}</h2>
+        </div>
+        ${
+          state.reagentPracticeMode === 'self-test'
+            ? `
+              <label class="select-control">
+                <span>选择有机物</span>
+                <select data-input="self-test-compound" aria-label="选择有机物">
+                  ${compounds
+                    .map(
+                      (item) => `
+                        <option value="${item.id}" ${item.id === compound.id ? 'selected' : ''}>
+                          ${item.name}
+                        </option>
+                      `
+                    )
+                    .join('')}
+                </select>
+              </label>
+            `
+            : ''
+        }
+      </div>
       ${renderMoleculeViewerHost(compound.id, `${compound.name}三维结构`)}
       <dl class="compound-facts">
         <div><dt>分子式</dt><dd>${compound.formula}</dd></div>
@@ -466,6 +518,79 @@ function renderCompoundPanel(compound: Compound): string {
       </dl>
       <p class="compound-summary">${compound.summary}</p>
     </section>
+  `;
+}
+
+function renderReagentPracticeSwitch(): string {
+  return `
+    <div class="practice-switch" role="group" aria-label="基础练习方式">
+      ${reagentPracticeModeButton('self-test', '自测模式', '手动选择分子')}
+      ${reagentPracticeModeButton('challenge', '挑战闯关', '随机题库推进')}
+    </div>
+  `;
+}
+
+function reagentPracticeModeButton(mode: ReagentPracticeMode, title: string, description: string): string {
+  const active = state.reagentPracticeMode === mode;
+  return `
+    <button class="practice-mode-button ${active ? 'active' : ''}" data-reagent-practice-mode="${mode}" type="button" aria-pressed="${active}">
+      <span>${title}</span>
+      <small>${description}</small>
+    </button>
+  `;
+}
+
+function challengeTitle(): string {
+  if (state.reagentChallengeSession.completed) {
+    return '挑战完成';
+  }
+  return `第 ${state.reagentChallengeSession.currentIndex + 1} 关 · ${findCompoundById(state.reagentCompoundId).name} 与试剂`;
+}
+
+function renderChallengeStatus(): string {
+  const session = state.reagentChallengeSession;
+  const total = session.questions.length;
+  const level = session.completed ? total : session.currentIndex + 1;
+  const progress = total === 0 ? 0 : Math.round((session.score / total) * 100);
+
+  return `
+    <section class="challenge-status" aria-label="挑战闯关进度">
+      <div>
+        <span>关卡</span>
+        <strong>${level}/${total}</strong>
+      </div>
+      <div>
+        <span>得分</span>
+        <strong>${session.score}</strong>
+      </div>
+      <div class="challenge-progress" aria-hidden="true">
+        <span style="width: ${progress}%"></span>
+      </div>
+    </section>
+  `;
+}
+
+function renderChallengeComplete(): string {
+  const session = state.reagentChallengeSession;
+  return `
+    <section class="challenge-complete">
+      <strong>本轮挑战完成</strong>
+      <p>你已通过 ${session.score}/${session.questions.length} 关。可以重开一轮随机题库继续练习。</p>
+      <button class="primary-action compact" data-action="restart-reagent-challenge" type="button">再来一轮</button>
+    </section>
+  `;
+}
+
+function renderChallengeAdvanceAction(): string {
+  if (state.reagentPracticeMode !== 'challenge' || !state.reagentChallengeSession.canAdvance) {
+    return '';
+  }
+
+  const isFinalLevel = state.reagentChallengeSession.currentIndex >= state.reagentChallengeSession.questions.length - 1;
+  return `
+    <button class="primary-action challenge-next-action" data-action="advance-reagent-challenge" type="button">
+      ${isFinalLevel ? '完成挑战' : '进入下一关'}
+    </button>
   `;
 }
 
@@ -568,8 +693,17 @@ function bindEvents(): void {
     });
   });
 
+  appRoot.querySelectorAll<HTMLButtonElement>('[data-reagent-practice-mode]').forEach((button) => {
+    button.addEventListener('click', () => {
+      setReagentPracticeMode(button.dataset.reagentPracticeMode as ReagentPracticeMode);
+    });
+  });
+
   appRoot.querySelectorAll<HTMLButtonElement>('[data-reagent]').forEach((button) => {
     button.addEventListener('click', () => {
+      if (state.reagentPracticeMode === 'challenge') {
+        return;
+      }
       state.reagentId = button.dataset.reagent ?? state.reagentId;
       state.reagentFeedback = '';
       render();
@@ -595,6 +729,23 @@ function bindEvents(): void {
   appRoot.querySelectorAll<HTMLInputElement>('[data-input]').forEach((input) => {
     input.addEventListener('input', () => {
       const kind = input.dataset.input;
+      if (kind === 'self-test-compound') {
+        const next = selectSelfTestCompound(
+          {
+            compoundId: state.reagentCompoundId,
+            reagentId: state.reagentId,
+            answer: state.reagentAnswer,
+            feedback: state.reagentFeedback
+          },
+          input.value
+        );
+        state.reagentCompoundId = next.compoundId;
+        state.reagentId = next.reagentId;
+        state.reagentAnswer = next.answer;
+        state.reagentFeedback = next.feedback;
+        render();
+        return;
+      }
       if (kind === 'pair-type') state.pairTypeGuess = input.value;
       if (kind === 'chat') state.chatInput = input.value;
       if (kind === 'structure-guess') state.structureGuess = input.value;
@@ -625,6 +776,8 @@ function bindEvents(): void {
     button.addEventListener('click', () => {
       const action = button.dataset.action;
       if (action === 'new-reagent') newReagentChallenge();
+      if (action === 'restart-reagent-challenge') restartReagentChallenge();
+      if (action === 'advance-reagent-challenge') advanceReagentChallenge();
       if (action === 'submit-reagent') submitReagentAnswer();
       if (action === 'new-pair') newPairChallenge();
       if (action === 'submit-pair') submitPairAnswer();
@@ -636,7 +789,61 @@ function bindEvents(): void {
   });
 }
 
+function setReagentPracticeMode(mode: ReagentPracticeMode): void {
+  state.reagentPracticeMode = mode;
+  state.reagentAnswer = null;
+  state.reagentFeedback = '';
+
+  if (mode === 'challenge') {
+    if (state.reagentChallengeSession.completed) {
+      state.reagentChallengeSession = createReagentChallengeSession();
+    }
+    applyCurrentChallengeQuestion();
+  }
+
+  render();
+}
+
+function createReagentChallengeSession(): ChallengeSession {
+  return createChallengeSession(challengeCompoundIds, challengeReagentIds, { size: 6 });
+}
+
+function restartReagentChallenge(): void {
+  state.reagentPracticeMode = 'challenge';
+  state.reagentChallengeSession = createReagentChallengeSession();
+  state.reagentFeedback = '';
+  applyCurrentChallengeQuestion();
+  render();
+}
+
+function advanceReagentChallenge(): void {
+  state.reagentChallengeSession = advanceChallenge(state.reagentChallengeSession);
+
+  if (state.reagentChallengeSession.completed) {
+    state.reagentAnswer = null;
+    state.reagentFeedback = `挑战完成：本轮共 ${state.reagentChallengeSession.questions.length} 关，答对 ${state.reagentChallengeSession.score} 关。`;
+    render();
+    return;
+  }
+
+  state.reagentFeedback = '';
+  applyCurrentChallengeQuestion();
+  render();
+}
+
+function applyCurrentChallengeQuestion(): void {
+  const question = getCurrentChallengeQuestion(state.reagentChallengeSession);
+  if (!question) {
+    return;
+  }
+
+  state.reagentCompoundId = question.compoundId;
+  state.reagentId = question.reagentId;
+  state.reagentAnswer = null;
+}
+
 function newReagentChallenge(): void {
+  state.reagentPracticeMode = 'self-test';
   state.reagentCompoundId = pick(compounds.filter((compound) => compound.level !== 'advanced')).id;
   state.reagentId = pick(reagents).id;
   state.reagentAnswer = null;
@@ -654,6 +861,20 @@ function submitReagentAnswer(): void {
   const reaction = getReagentReaction(state.reagentCompoundId, state.reagentId);
   const expected = reaction.reacts ? 'yes' : 'no';
   const isCorrect = state.reagentAnswer === expected;
+
+  if (state.reagentPracticeMode === 'challenge') {
+    const evaluated = evaluateChallengeAnswer(state.reagentChallengeSession, isCorrect);
+    state.reagentChallengeSession = evaluated.session;
+    const levelSuffix = isCorrect
+      ? state.reagentChallengeSession.currentIndex >= state.reagentChallengeSession.questions.length - 1
+        ? '本关通过，点击“完成挑战”查看结果。'
+        : '本关通过，点击“进入下一关”。'
+      : '本关还不能通过，请复盘后重新选择。';
+    state.reagentFeedback = `${isCorrect ? '正确' : '需要复盘'}：${reaction.reacts ? '会反应' : '不反应'}。${reaction.reason} 现象：${reaction.evidence}${reaction.equation ? ` 方程式：${reaction.equation}` : ''} ${levelSuffix}`;
+    render();
+    return;
+  }
+
   state.reagentFeedback = `${isCorrect ? '正确' : '需要复盘'}：${reaction.reacts ? '会反应' : '不反应'}。${reaction.reason} 现象：${reaction.evidence}${reaction.equation ? ` 方程式：${reaction.equation}` : ''}`;
   render();
 }
