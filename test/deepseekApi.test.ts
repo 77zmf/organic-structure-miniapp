@@ -44,6 +44,7 @@ describe('deepseek api handler', () => {
       model: 'deepseek-v4-pro',
       maxQuestionLength: 500
     });
+    expect(response.headers['Access-Control-Allow-Methods']).toContain('GET');
     expect(JSON.stringify(response.body)).not.toContain('unit-test-key');
   });
 

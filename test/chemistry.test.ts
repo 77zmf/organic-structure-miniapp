@@ -15,7 +15,8 @@ describe('unsaturation index calculation', () => {
     ['C4H10O', 0],
     ['C2H4', 1],
     ['C2H2', 2],
-    ['CH3Cl', 0]
+    ['CH3Cl', 0],
+    ['C9H9NaO3', 5]
   ])('calculates textbook unsaturation index for %s', (formula, expected) => {
     expect(calculateUnsaturationIndex(formula)).toBe(expected);
   });

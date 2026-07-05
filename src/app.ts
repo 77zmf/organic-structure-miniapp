@@ -435,7 +435,7 @@ function renderUnsaturationMode(): string {
         <div class="unsaturation-grid">
           <article>
             <h3>高中常用公式</h3>
-            <p>对只含 C、H、O 的有机物：Ω = C + 1 - H / 2；卤素按氢处理，氮原子按 +N / 2 修正。</p>
+            <p>对只含 C、H、O 的有机物：Ω = C + 1 - H / 2；卤素和 Na 等一价金属按氢处理，氮原子按 +N / 2 修正。</p>
           </article>
           <article>
             <h3>结构贡献</h3>
@@ -478,12 +478,12 @@ function renderUnsaturationMethodGuide(): string {
         <h3>先把分子式转成不饱和度</h3>
       </div>
       <div class="formula-rule-strip">
-        <span>Ω = C + 1 + N / 2 - (H + X) / 2</span>
-        <small>X 表示 F、Cl、Br、I 等卤素；O、S 不影响计算。</small>
+        <span>Ω = C + 1 + N / 2 - (H + X + M) / 2</span>
+        <small>X 表示 F、Cl、Br、I 等卤素；M 表示 Na 等一价金属；O、S 不影响计算。</small>
       </div>
       <ol>
         <li>只含 C、H、O 时，用 Ω = C + 1 - H / 2。</li>
-        <li>有卤素时，把卤素原子数并入 H；有氮时加 N / 2。</li>
+        <li>有卤素或一价金属时，把这些原子数并入 H；有氮时加 N / 2。</li>
         <li>结果只能提示双键、三键、环、羰基或苯环的可能性，仍需实验验证。</li>
       </ol>
     </section>
@@ -1373,7 +1373,7 @@ function bindEvents(): void {
       if (kind === 'structure-guess') state.structureGuess = input.value;
       if (kind === 'proxy-url') {
         state.proxyUrl = input.value.trim();
-        localStorage.setItem('deepseekProxyUrl', state.proxyUrl);
+        safeLocalStorageSet('deepseekProxyUrl', state.proxyUrl);
       }
     });
 
@@ -1848,9 +1848,27 @@ function getInitialProxyUrl(): string {
   return resolveInitialProxyUrl({
     hostname: window.location.hostname,
     search: window.location.search,
-    savedProxyUrl: localStorage.getItem('deepseekProxyUrl'),
+    savedProxyUrl: safeLocalStorageGet('deepseekProxyUrl'),
     envProxyUrl: import.meta.env.VITE_DEEPSEEK_PROXY_URL
   });
+}
+
+function safeLocalStorageGet(key: string): string | null {
+  try {
+    return typeof localStorage === 'undefined' ? null : localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeLocalStorageSet(key: string, value: string): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(key, value);
+    }
+  } catch {
+    // Storage can be unavailable in restricted browser contexts; the proxy URL remains in state.
+  }
 }
 
 function proxyStatusText(): string {

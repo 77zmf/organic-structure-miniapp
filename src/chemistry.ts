@@ -77,7 +77,7 @@ interface FormulaCounts {
   carbon: number;
   hydrogen: number;
   nitrogen: number;
-  halogen: number;
+  monovalentAdjustment: number;
 }
 
 export const compounds: Compound[] = [
@@ -652,11 +652,11 @@ export const formulaPuzzles: FormulaPuzzle[] = [
 
 export function calculateUnsaturationIndex(formula: string): number {
   const counts = parseFormulaCounts(formula);
-  return counts.carbon + 1 + counts.nitrogen / 2 - (counts.hydrogen + counts.halogen) / 2;
+  return counts.carbon + 1 + counts.nitrogen / 2 - (counts.hydrogen + counts.monovalentAdjustment) / 2;
 }
 
 function parseFormulaCounts(formula: string): FormulaCounts {
-  const counts: FormulaCounts = { carbon: 0, hydrogen: 0, nitrogen: 0, halogen: 0 };
+  const counts: FormulaCounts = { carbon: 0, hydrogen: 0, nitrogen: 0, monovalentAdjustment: 0 };
   const tokens = formula.match(/[A-Z][a-z]?\d*/g) ?? [];
 
   for (const token of tokens) {
@@ -668,7 +668,9 @@ function parseFormulaCounts(formula: string): FormulaCounts {
     if (element === 'C') counts.carbon += count;
     if (element === 'H') counts.hydrogen += count;
     if (element === 'N') counts.nitrogen += count;
-    if (element === 'F' || element === 'Cl' || element === 'Br' || element === 'I' || element === 'Na') counts.halogen += count;
+    if (element === 'F' || element === 'Cl' || element === 'Br' || element === 'I' || element === 'Na') {
+      counts.monovalentAdjustment += count;
+    }
   }
 
   return counts;

@@ -27,6 +27,49 @@ beforeEach(() => {
 });
 
 describe('app learning dimension labels', () => {
+  test('starts even when browser storage is unavailable', async () => {
+    const root = createRoot();
+    vi.stubGlobal('document', {
+      querySelector: (selector: string) => (selector === '#app' ? root : null)
+    });
+    vi.stubGlobal('window', {
+      location: { hostname: '127.0.0.1', search: '' }
+    });
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn(() => {
+        throw new Error('storage blocked');
+      }),
+      setItem: vi.fn(() => {
+        throw new Error('storage blocked');
+      })
+    });
+
+    await import('../src/app');
+
+    expect(root.innerHTML).toContain('官能团推理练习台');
+  });
+
+  test('keeps proxy input usable when browser storage writes are blocked', async () => {
+    const proxyInput = createInput('proxy-url', '/api/deepseek');
+    const root = createRoot({ inputElements: [proxyInput.input] });
+    vi.stubGlobal('document', {
+      querySelector: (selector: string) => (selector === '#app' ? root : null)
+    });
+    vi.stubGlobal('window', {
+      location: { hostname: '127.0.0.1', search: '' }
+    });
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn(() => null),
+      setItem: vi.fn(() => {
+        throw new Error('storage blocked');
+      })
+    });
+
+    await import('../src/app');
+
+    expect(() => proxyInput.inputEvent()).not.toThrow();
+  });
+
   test('renders the requested three learning dimension names', async () => {
     const root = createRoot();
 
@@ -612,6 +655,7 @@ describe('app method and unsaturation pages', () => {
 
     expect(root.innerHTML).toContain('不饱和度计算');
     expect(root.innerHTML).toContain('计算方法');
+    expect(root.innerHTML).toContain('Na 等一价金属');
     expect(root.innerHTML).toContain('C<sub>6</sub>H<sub>6</sub>');
     expect(root.innerHTML).toContain('不饱和度为 4');
     expect(root.innerHTML).toContain('苯环');
