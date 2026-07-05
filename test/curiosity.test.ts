@@ -6,7 +6,8 @@ import {
   getExpectedPhenomena,
   getExpectedPhenomenon,
   getPairRoleForCompound,
-  getUnsaturationPredictionFeedback
+  getUnsaturationPredictionFeedback,
+  methodNodeDetails
 } from '../src/curiosity';
 
 describe('curiosity helper feedback', () => {
@@ -31,6 +32,11 @@ describe('curiosity helper feedback', () => {
 
     expect(feedback).toContain('可能支持');
     expect(feedback).toContain('仍需实验验证');
+  });
+
+  test('keeps unsaturation calculation out of the method route data source', () => {
+    expect(methodNodeDetails.map((node) => node.id)).not.toContain('unsaturation');
+    expect(methodNodeDetails.map((node) => node.label)).not.toContain('计算不饱和度');
   });
 
   test('asks for review when unsaturation prediction conflicts with index', () => {

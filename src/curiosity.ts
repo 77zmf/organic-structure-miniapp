@@ -66,13 +66,6 @@ export const methodNodeDetails: MethodNodeDetail[] = [
     example: '相对分子质量为 60 且只含 C、H、O，可帮助锁定 C3H8O。'
   },
   {
-    id: 'unsaturation',
-    label: '计算不饱和度',
-    tells: '能告诉我们分子中是否可能有环、双键、三键或苯环。',
-    cannotTell: '还不能确定是哪一种官能团，也不能确定位置。',
-    example: 'C6H6 的不饱和度为 4，可能提示苯环，但仍需实验验证。'
-  },
-  {
     id: 'functional-group',
     label: '判断官能团',
     tells: '能告诉我们分子表现出哪类典型化学性质。',
