@@ -280,6 +280,29 @@ button svg {
   height: 100%;
 }
 
+.molecule-viewer-fallback {
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.viewer-fallback-content {
+  display: grid;
+  gap: 8px;
+  max-width: 320px;
+  text-align: center;
+}
+
+.viewer-fallback-content strong {
+  color: var(--blue);
+  font-size: 18px;
+}
+
+.viewer-fallback-content span {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
 .molecule-viewer.compact {
   min-height: 260px;
   aspect-ratio: 1 / 1;

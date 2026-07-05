@@ -27,7 +27,7 @@ import {
   getReagentReaction,
   reagents
 } from './chemistry';
-import { getMoleculeModel, type DisplayMode } from './moleculeModels';
+import { getMoleculeModel, type DisplayMode, type MoleculeModel } from './moleculeModels';
 import { createMoleculeViewer, type MoleculeViewer } from './moleculeViewer';
 import { createPuzzleUnlockState, updatePuzzleUnlockWithGuess } from './puzzleUnlock';
 
@@ -206,8 +206,19 @@ export function getMoleculeViewerMountSpec(
   return {
     compoundId: model.compoundId,
     displayMode,
-    highlightId: highlightEnabled ? (model.highlights[0]?.id ?? null) : null
+    highlightId: highlightEnabled ? getPrimaryHighlightId(model) : null
   };
+}
+
+function getPrimaryHighlightId(model: MoleculeModel): FunctionalGroup | null {
+  const compound = findCompoundById(model.compoundId);
+  for (const group of compound.functionalGroups) {
+    const highlight = model.highlights.find((item) => item.id === group);
+    if (highlight) {
+      return highlight.id;
+    }
+  }
+  return model.highlights[0]?.id ?? null;
 }
 
 export function getPuzzleMoleculeViewerMountSpec(
@@ -229,12 +240,16 @@ function mountMoleculeViewers(): void {
       return;
     }
 
-    const spec = getMoleculeViewerMountSpec(compoundId, state.viewerDisplayMode, state.highlightFunctionalGroup);
-    const viewer = createMoleculeViewer(container, getMoleculeModel(spec.compoundId), {
-      displayMode: spec.displayMode,
-      highlightId: spec.highlightId
-    });
-    mountedMoleculeViewers.push(viewer);
+    try {
+      const spec = getMoleculeViewerMountSpec(compoundId, state.viewerDisplayMode, state.highlightFunctionalGroup);
+      const viewer = createMoleculeViewer(container, getMoleculeModel(spec.compoundId), {
+        displayMode: spec.displayMode,
+        highlightId: spec.highlightId
+      });
+      mountedMoleculeViewers.push(viewer);
+    } catch {
+      renderMoleculeViewerFallback(container);
+    }
   });
 }
 
@@ -242,6 +257,16 @@ function disposeMountedMoleculeViewers(): void {
   while (mountedMoleculeViewers.length > 0) {
     mountedMoleculeViewers.pop()?.dispose();
   }
+}
+
+function renderMoleculeViewerFallback(container: HTMLElement): void {
+  container.classList.add('molecule-viewer-fallback');
+  container.innerHTML = `
+    <div class="viewer-fallback-content">
+      <strong>3D 模型暂不可用</strong>
+      <span>当前设备未能初始化 WebGL，可继续完成反应判断与推理。</span>
+    </div>
+  `;
 }
 
 function renderReagentMode(): string {
