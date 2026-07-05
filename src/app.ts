@@ -339,13 +339,13 @@ function renderMethodMode(): string {
             <h3>确定有机化合物结构式流程</h3>
             <div class="flow-board formula-flow formula-route" aria-label="确定有机化合物结构式流程示意">
               <div class="flow-node main-node">有机化合物分子式</div>
+              <span class="flow-tag formula-route-middle-tag">化学性质实验或仪器分析图谱</span>
               <div class="formula-branches">
                 <div class="route-branch">
                   <div class="flow-arrow">↓</div>
                   <div class="flow-node">推测化学键类型</div>
                 </div>
                 <div class="route-branch">
-                  <span class="flow-tag">化学性质实验或仪器分析图谱</span>
                   <div class="flow-arrow">↓</div>
                   ${renderMethodNode('functional-group', '判断官能团种类及官能团所处位置')}
                 </div>

@@ -849,6 +849,12 @@ h2 .chem-formula {
   text-align: center;
 }
 
+.formula-route-middle-tag {
+  justify-self: center;
+  width: min(360px, 86%);
+  text-align: center;
+}
+
 .flow-lane > div,
 .flow-merge > div {
   display: grid;

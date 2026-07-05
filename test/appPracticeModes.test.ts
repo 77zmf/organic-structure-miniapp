@@ -782,6 +782,8 @@ describe('app method and unsaturation pages', () => {
     expect(root.innerHTML).toContain('官能团及碳骨架状况');
     expect(root.innerHTML).not.toContain('计算不饱和度');
     expect(root.innerHTML).not.toContain('data-method-node="unsaturation"');
+    expect(root.innerHTML).toContain('class="flow-tag formula-route-middle-tag">化学性质实验或仪器分析图谱</span>');
+    expect(root.innerHTML.indexOf('formula-route-middle-tag')).toBeLessThan(root.innerHTML.indexOf('class="formula-branches"'));
     expect(root.innerHTML).toContain('确定有机化合物结构式');
   });
 });
