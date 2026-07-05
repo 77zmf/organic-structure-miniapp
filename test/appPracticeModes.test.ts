@@ -154,6 +154,45 @@ describe('app method route details', () => {
     expect(root.innerHTML).toContain('能告诉我们');
     expect(root.innerHTML).toContain('还不能确定');
   });
+
+  test('updates the method detail panel when a valid route node is clicked', async () => {
+    const methodTab = createModeButton('method');
+    const structureNode = createMethodNodeButton('structure');
+    const root = createRoot({
+      modeButtons: [methodTab.button],
+      methodNodeButtons: [structureNode.button]
+    });
+
+    await importApp(root);
+    methodTab.click();
+
+    expect(root.innerHTML).toContain('C6H6 的不饱和度为 4');
+
+    structureNode.click();
+
+    expect(root.innerHTML).toContain('确定结构式');
+    expect(root.innerHTML).toContain('能把分子式、官能团和碳骨架证据合并成最终结构。');
+    expect(root.innerHTML).not.toContain('C6H6 的不饱和度为 4');
+  });
+
+  test('ignores unknown method route node ids', async () => {
+    const methodTab = createModeButton('method');
+    const unknownNode = createMethodNodeButton('not-a-method-node');
+    const root = createRoot({
+      modeButtons: [methodTab.button],
+      methodNodeButtons: [unknownNode.button]
+    });
+
+    await importApp(root);
+    methodTab.click();
+
+    expect(root.innerHTML).toContain('C6H6 的不饱和度为 4');
+
+    unknownNode.click();
+
+    expect(root.innerHTML).toContain('计算不饱和度');
+    expect(root.innerHTML).toContain('C6H6 的不饱和度为 4');
+  });
 });
 
 async function importApp(root: HTMLDivElement): Promise<void> {
@@ -174,6 +213,7 @@ async function importApp(root: HTMLDivElement): Promise<void> {
 interface FakeRootOptions {
   modeButtons?: HTMLButtonElement[];
   actionButtons?: HTMLButtonElement[];
+  methodNodeButtons?: HTMLButtonElement[];
 }
 
 function createRoot(options: FakeRootOptions = {}): HTMLDivElement {
@@ -185,6 +225,9 @@ function createRoot(options: FakeRootOptions = {}): HTMLDivElement {
       }
       if (selector === '[data-action]') {
         return options.actionButtons ?? [];
+      }
+      if (selector === '[data-method-node]') {
+        return options.methodNodeButtons ?? [];
       }
       return [];
     })
@@ -215,6 +258,22 @@ function createActionButton(action: string): {
   return {
     button: {
       dataset: { action },
+      addEventListener: vi.fn((eventName: string, callback: () => void) => {
+        if (eventName === 'click') listener = callback;
+      })
+    } as unknown as HTMLButtonElement,
+    click: () => listener?.()
+  };
+}
+
+function createMethodNodeButton(methodNode: string): {
+  button: HTMLButtonElement;
+  click: () => void;
+} {
+  let listener: (() => void) | null = null;
+  return {
+    button: {
+      dataset: { methodNode },
       addEventListener: vi.fn((eventName: string, callback: () => void) => {
         if (eventName === 'click') listener = callback;
       })

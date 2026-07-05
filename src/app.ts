@@ -1011,7 +1011,12 @@ function bindEvents(): void {
 
   appRoot.querySelectorAll<HTMLButtonElement>('[data-method-node]').forEach((button) => {
     button.addEventListener('click', () => {
-      state.selectedMethodNodeId = button.dataset.methodNode ?? state.selectedMethodNodeId;
+      const nextMethodNodeId = button.dataset.methodNode;
+      if (!isMethodNodeId(nextMethodNodeId)) {
+        return;
+      }
+
+      state.selectedMethodNodeId = nextMethodNodeId;
       render();
     });
   });
@@ -1123,6 +1128,10 @@ function nextCuriosityQuestion(): void {
 
   state.curiosityQuestionIndex = (state.curiosityQuestionIndex + 1) % curiosityQuestions.length;
   render();
+}
+
+function isMethodNodeId(value: string | undefined): value is string {
+  return value !== undefined && methodNodeDetails.some((node) => node.id === value);
 }
 
 function setReagentPracticeMode(mode: ReagentPracticeMode): void {
