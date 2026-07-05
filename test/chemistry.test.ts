@@ -101,11 +101,58 @@ describe('formula puzzle agent', () => {
     expect(reply.hintLevel).toBe('strong');
   });
 
+  test('agent does not apply formaldehyde phenol condensation to acetaldehyde', () => {
+    const reply = askAgent('puzzle-acetaldehyde', '它能和苯酚发生反应吗？');
+
+    expect(reply.answer).toContain('不能');
+    expect(reply.answer).not.toContain('酚醛树脂');
+    expect(reply.answer).not.toContain('缩聚反应');
+    expect(reply.answer).not.toContain('乙醛');
+    expect(reply.matchedTopic).toBe('苯酚');
+    expect(reply.hintLevel).toBe('medium');
+  });
+
   test('agent prefers ethyl acetate over acetic acid when organic-pair aliases overlap', () => {
     const reply = askAgent('puzzle-ethanol', '它能和乙酸乙酯发生反应吗？');
 
+    expect(reply.answer).toContain('不能');
+    expect(reply.answer).toContain('没有可直接配对');
+    expect(reply.answer).not.toContain('酯化反应');
     expect(reply.answer).not.toContain('乙醇');
     expect(reply.matchedTopic).toBe('乙酸乙酯');
+  });
+
+  test('agent does not treat benzene ring questions as organic-pair reactions', () => {
+    const reply = askAgent('puzzle-phenol', '它含有苯环吗？');
+
+    expect(reply.answer).not.toContain('可直接配对');
+    expect(reply.matchedTopic).toBe('fallback');
+  });
+
+  test('agent does not treat formula comparison mentions as organic-pair reactions', () => {
+    const reply = askAgent('puzzle-phenol', '它的分子式和苯一样吗？');
+
+    expect(reply.answer).not.toContain('可直接配对');
+    expect(reply.matchedTopic).toBe('fallback');
+  });
+
+  test('agent redacts hidden benzene without corrupting visible phenol', () => {
+    const reply = askAgent('puzzle-benzene', '它能和苯酚发生反应吗？');
+
+    expect(reply.answer).toContain('不能');
+    expect(reply.answer).toContain('苯酚');
+    expect(reply.answer).toContain('它和苯酚');
+    expect(reply.answer).not.toContain('它酚');
+    expect(reply.matchedTopic).toBe('苯酚');
+  });
+
+  test('agent redacts hidden phenol when visible benzene alias overlaps', () => {
+    const reply = askAgent('puzzle-phenol', '它能和苯发生反应吗？');
+
+    expect(reply.answer).toContain('不能');
+    expect(reply.answer).toContain('它和苯');
+    expect(reply.answer).not.toContain('苯酚');
+    expect(reply.matchedTopic).toBe('苯');
   });
 
   test('structure guesses accept Chinese names and aliases', () => {

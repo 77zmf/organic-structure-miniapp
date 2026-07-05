@@ -220,6 +220,13 @@ export const formulaPuzzles: FormulaPuzzle[] = [
     possibleStructures: ['苯酚', '苯甲醇', '苯甲醚']
   },
   {
+    id: 'puzzle-benzene',
+    formula: 'C6H6',
+    targetCompoundId: 'benzene',
+    openingHint: '可先问它是否能使溴的四氯化碳溶液或酸性高锰酸钾褪色。',
+    possibleStructures: ['苯']
+  },
+  {
     id: 'puzzle-formaldehyde',
     formula: 'CH2O',
     targetCompoundId: 'formaldehyde',
@@ -269,6 +276,7 @@ const reagentReactionTable: Record<string, Record<string, ReactionResult>> = {
 const pairReactionRules: Array<{
   a: FunctionalGroup;
   b: FunctionalGroup;
+  matches?: (first: Compound, second: Compound) => boolean;
   result: PairReactionResult;
 }> = [
   {
@@ -285,6 +293,7 @@ const pairReactionRules: Array<{
   {
     a: 'phenol',
     b: 'aldehyde',
+    matches: (first, second) => matchesCompoundPair(first, second, 'formaldehyde', 'phenol'),
     result: {
       reacts: true,
       type: '缩聚反应',
@@ -332,7 +341,7 @@ export function getOrganicPairReaction(firstId: string, secondId: string): PairR
   for (const rule of pairReactionRules) {
     const forward = first.functionalGroups.includes(rule.a) && second.functionalGroups.includes(rule.b);
     const reverse = first.functionalGroups.includes(rule.b) && second.functionalGroups.includes(rule.a);
-    if (forward || reverse) {
+    if ((forward || reverse) && (!rule.matches || rule.matches(first, second))) {
       return rule.result;
     }
   }
@@ -379,7 +388,7 @@ export function askAgent(puzzleId: string, question: string): AgentReply {
     };
   }
 
-  const otherCompound = matchOtherCompound(normalized, compound);
+  const otherCompound = hasOrganicPairIntent(normalized) ? matchOtherCompound(normalized, compound) : null;
   if (otherCompound) {
     const reaction = getOrganicPairReaction(compound.id, otherCompound.id);
     const answer = reaction.reacts
@@ -387,7 +396,7 @@ export function askAgent(puzzleId: string, question: string): AgentReply {
       : `不能。${reaction.reason}`;
 
     return {
-      answer: hideTargetFromAnswer(answer, compound),
+      answer: hideTargetFromAnswer(answer, compound, [otherCompound]),
       hintLevel: reaction.reacts ? 'strong' : 'medium',
       matchedTopic: otherCompound.name
     };
@@ -442,6 +451,13 @@ function negative(type: string, reason: string, evidence: string): ReactionResul
   return { reacts: false, type, reason, evidence };
 }
 
+function matchesCompoundPair(first: Compound, second: Compound, firstId: string, secondId: string): boolean {
+  return (
+    (first.id === firstId && second.id === secondId) ||
+    (first.id === secondId && second.id === firstId)
+  );
+}
+
 function normalize(value: string): string {
   return value
     .toLowerCase()
@@ -488,6 +504,23 @@ function matchReagent(normalized: string): string | null {
   return null;
 }
 
+function hasOrganicPairIntent(normalized: string): boolean {
+  return (
+    normalized.includes('反应') ||
+    normalized.includes('酯化') ||
+    normalized.includes('缩聚') ||
+    normalized.includes('加成') ||
+    normalized.includes('取代') ||
+    normalized.includes('水解') ||
+    normalized.includes('能和') ||
+    normalized.includes('能与') ||
+    normalized.includes('可和') ||
+    normalized.includes('可与') ||
+    normalized.includes('可以和') ||
+    normalized.includes('可以与')
+  );
+}
+
 function matchOtherCompound(normalized: string, hiddenCompound: Compound): Compound | null {
   const matches: Array<{ compound: Compound; aliasLength: number }> = [];
 
@@ -510,11 +543,64 @@ function matchOtherCompound(normalized: string, hiddenCompound: Compound): Compo
   );
 }
 
-function hideTargetFromAnswer(answer: string, compound: Compound): string {
-  return [compound.name, compound.structureFormula].reduce(
-    (safeAnswer, forbidden) => safeAnswer.replaceAll(forbidden, '它'),
-    answer
+function hideTargetFromAnswer(answer: string, compound: Compound, visibleCompounds: Compound[] = []): string {
+  const forbiddenTerms = uniqueTerms([compound.name, compound.structureFormula, ...compound.aliases])
+    .filter((term) => normalize(term) !== normalize(compound.formula))
+    .sort((a, b) => b.length - a.length);
+  const protectedRanges = visibleCompounds.flatMap((visibleCompound) =>
+    uniqueTerms([visibleCompound.name, visibleCompound.structureFormula, ...visibleCompound.aliases])
+      .flatMap((term) => findTermRanges(answer, term))
   );
+  const replacements: Array<{ start: number; end: number }> = [];
+
+  for (const term of forbiddenTerms) {
+    for (const range of findTermRanges(answer, term)) {
+      if (rangesContainAny(range, protectedRanges) || rangesOverlapAny(range, replacements)) continue;
+      replacements.push(range);
+    }
+  }
+
+  return replacements
+    .sort((a, b) => b.start - a.start)
+    .reduce((safeAnswer, range) => `${safeAnswer.slice(0, range.start)}它${safeAnswer.slice(range.end)}`, answer);
+}
+
+function uniqueTerms(terms: string[]): string[] {
+  return Array.from(
+    new Set(
+      terms
+        .map((term) => term.trim())
+        .filter((term) => term.length > 1 || /[\u3400-\u9fff]/.test(term))
+    )
+  );
+}
+
+function findTermRanges(text: string, term: string): Array<{ start: number; end: number }> {
+  const ranges: Array<{ start: number; end: number }> = [];
+  const lowerText = text.toLowerCase();
+  const lowerTerm = term.toLowerCase();
+  let index = lowerText.indexOf(lowerTerm);
+
+  while (index !== -1) {
+    ranges.push({ start: index, end: index + term.length });
+    index = lowerText.indexOf(lowerTerm, index + term.length);
+  }
+
+  return ranges;
+}
+
+function rangesOverlapAny(
+  range: { start: number; end: number },
+  ranges: Array<{ start: number; end: number }>
+): boolean {
+  return ranges.some((item) => range.start < item.end && item.start < range.end);
+}
+
+function rangesContainAny(
+  range: { start: number; end: number },
+  ranges: Array<{ start: number; end: number }>
+): boolean {
+  return ranges.some((item) => item.start <= range.start && range.end <= item.end);
 }
 
 function describeFunctionalGroupWithoutNamingStructure(compound: Compound): string {
