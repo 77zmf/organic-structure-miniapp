@@ -28,6 +28,7 @@ import {
   reagents
 } from './chemistry';
 import type { DisplayMode } from './moleculeModels';
+import { createPuzzleUnlockState, updatePuzzleUnlockWithGuess } from './puzzleUnlock';
 
 type Mode = 'reagent' | 'pair' | 'puzzle';
 type YesNo = 'yes' | 'no' | null;
@@ -64,6 +65,7 @@ interface AppState {
 
 const appRoot = getAppRoot();
 let chatRequestId = 0;
+const initialPuzzleUnlock = createPuzzleUnlockState('puzzle-ethanol');
 
 const state: AppState = {
   mode: 'reagent',
@@ -76,9 +78,9 @@ const state: AppState = {
   pairAnswer: null,
   pairTypeGuess: '',
   pairFeedback: '',
-  puzzleId: 'puzzle-ethanol',
-  puzzleUnlocked: false,
-  puzzleUnlockedCompoundId: null,
+  puzzleId: initialPuzzleUnlock.puzzleId,
+  puzzleUnlocked: initialPuzzleUnlock.unlocked,
+  puzzleUnlockedCompoundId: initialPuzzleUnlock.unlockedCompoundId,
   viewerDisplayMode: 'ball-stick',
   highlightFunctionalGroup: true,
   proxyUrl: getInitialProxyUrl(),
@@ -593,10 +595,11 @@ function newPuzzleChallenge(): void {
 }
 
 function setPuzzle(puzzle: FormulaPuzzle): void {
+  const unlockState = createPuzzleUnlockState(puzzle.id);
   chatRequestId += 1;
-  state.puzzleId = puzzle.id;
-  state.puzzleUnlocked = false;
-  state.puzzleUnlockedCompoundId = null;
+  state.puzzleId = unlockState.puzzleId;
+  state.puzzleUnlocked = unlockState.unlocked;
+  state.puzzleUnlockedCompoundId = unlockState.unlockedCompoundId;
   state.chatInput = '';
   state.structureGuess = '';
   state.puzzleFeedback = '';
@@ -647,14 +650,17 @@ function submitGuess(): void {
   }
 
   const result = answerFormulaPuzzle(state.puzzleId, guess);
+  const unlockState = updatePuzzleUnlockWithGuess(
+    {
+      puzzleId: state.puzzleId,
+      unlocked: state.puzzleUnlocked,
+      unlockedCompoundId: state.puzzleUnlockedCompoundId
+    },
+    guess
+  );
   state.puzzleFeedback = result.message;
-  if (result.correct) {
-    state.puzzleUnlocked = true;
-    state.puzzleUnlockedCompoundId = result.compound.id;
-  } else {
-    state.puzzleUnlocked = false;
-    state.puzzleUnlockedCompoundId = null;
-  }
+  state.puzzleUnlocked = unlockState.unlocked;
+  state.puzzleUnlockedCompoundId = unlockState.unlockedCompoundId;
   render();
 }
 
