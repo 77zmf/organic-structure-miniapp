@@ -81,6 +81,17 @@ describe('deepseek guardrails', () => {
     expect(answer).not.toContain('ethanol');
     expect(answer).toContain('我不能直接公布结构');
   });
+
+  test('redacts hidden single-character benzene without corrupting visible phenol', () => {
+    const puzzle = findPuzzleById('puzzle-benzene');
+    const answer = sanitizeAgentAnswer('它是苯，不能和苯酚反应。', puzzle);
+
+    expect(answer).toContain('该隐藏目标');
+    expect(answer).toContain('苯酚');
+    expect(answer).not.toContain('它是苯，');
+    expect(answer).not.toContain('该隐藏目标酚');
+    expect(answer).toContain('我不能直接公布结构');
+  });
 });
 
 describe('deepseek response parsing', () => {

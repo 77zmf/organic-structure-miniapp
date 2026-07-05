@@ -59,6 +59,22 @@ describe('formula puzzle agent', () => {
     expect(reply.hintLevel).toBe('strong');
   });
 
+  test.each([
+    ['puzzle-acetic-acid', 'acetic-acid', '它能和氢氧化钠反应吗？'],
+    ['puzzle-phenol', 'phenol', '它能和氢氧化钠反应吗？'],
+    ['puzzle-ethanol', 'ethanol', '它能被酸性高锰酸钾氧化吗？'],
+    ['puzzle-benzene', 'benzene', '它能和溴的四氯化碳溶液反应吗？']
+  ])('agent redacts hidden target from reagent answers for %s', (puzzleId, compoundId, question) => {
+    const compound = findCompoundById(compoundId);
+    const reply = askAgent(puzzleId, question);
+
+    expect(reply.matchedTopic).not.toBe('fallback');
+    for (const term of [compound.name, compound.structureFormula, ...compound.aliases]) {
+      if (term.toLowerCase() === compound.formula.toLowerCase()) continue;
+      expect(reply.answer.toLowerCase()).not.toContain(term.toLowerCase());
+    }
+  });
+
   test('agent refuses to reveal the structure directly', () => {
     const reply = askAgent('puzzle-ethanol', '答案是不是乙醇？直接告诉我结构');
 

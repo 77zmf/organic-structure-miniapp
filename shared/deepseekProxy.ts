@@ -1,4 +1,6 @@
 import {
+  compounds,
+  type Compound,
   type FormulaPuzzle,
   findCompoundById,
   findPuzzleById
@@ -140,28 +142,28 @@ export function directRevealGuardAnswer(): string {
 
 export function sanitizeAgentAnswer(answer: string, puzzle: FormulaPuzzle): string {
   const target = findCompoundById(puzzle.targetCompoundId);
-  const forbiddenTerms = [
-    target.name,
-    target.structureFormula,
-    ...target.aliases
-  ]
-    .map((term) => term.trim())
-    .filter((term) => term.length > 1 && normalizeQuestion(term) !== normalizeQuestion(target.formula));
-
-  let sanitized = answer;
-  let redacted = false;
+  const forbiddenTerms = redactionTermsFor(target)
+    .filter((term) => normalizeQuestion(term) !== normalizeQuestion(target.formula))
+    .sort((a, b) => b.length - a.length);
+  const protectedRanges = compounds
+    .filter((compound) => compound.id !== target.id)
+    .flatMap((compound) => redactionTermsFor(compound).flatMap((term) => findTermRanges(answer, term)));
+  const replacements: Array<{ start: number; end: number }> = [];
 
   for (const term of forbiddenTerms) {
-    const next = replaceAllCaseInsensitive(sanitized, term, '该隐藏目标');
-    if (next !== sanitized) {
-      redacted = true;
-      sanitized = next;
+    for (const range of findTermRanges(answer, term)) {
+      if (rangesContainAny(range, protectedRanges) || rangesOverlapAny(range, replacements)) continue;
+      replacements.push(range);
     }
   }
 
-  if (!redacted) {
-    return sanitized;
+  if (replacements.length === 0) {
+    return answer;
   }
+
+  const sanitized = replacements
+    .sort((a, b) => b.start - a.start)
+    .reduce((safeAnswer, range) => `${safeAnswer.slice(0, range.start)}该隐藏目标${safeAnswer.slice(range.end)}`, answer);
 
   return `${sanitized}\n\n我不能直接公布结构。请继续通过实验性质完成判断。`;
 }
@@ -186,10 +188,40 @@ function normalizeQuestion(value: string): string {
   return value.toLowerCase().replace(/[？?！!，,。.、\s]/g, '');
 }
 
-function replaceAllCaseInsensitive(value: string, search: string, replacement: string): string {
-  return value.replace(new RegExp(escapeRegExp(search), 'gi'), replacement);
+function redactionTermsFor(compound: Compound): string[] {
+  return Array.from(
+    new Set(
+      [compound.name, compound.structureFormula, ...compound.aliases]
+        .map((term) => term.trim())
+        .filter((term) => term.length > 1 || /[\u3400-\u9fff]/.test(term))
+    )
+  );
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function findTermRanges(text: string, term: string): Array<{ start: number; end: number }> {
+  const ranges: Array<{ start: number; end: number }> = [];
+  const lowerText = text.toLowerCase();
+  const lowerTerm = term.toLowerCase();
+  let index = lowerText.indexOf(lowerTerm);
+
+  while (index !== -1) {
+    ranges.push({ start: index, end: index + term.length });
+    index = lowerText.indexOf(lowerTerm, index + term.length);
+  }
+
+  return ranges;
+}
+
+function rangesOverlapAny(
+  range: { start: number; end: number },
+  ranges: Array<{ start: number; end: number }>
+): boolean {
+  return ranges.some((item) => range.start < item.end && item.start < range.end);
+}
+
+function rangesContainAny(
+  range: { start: number; end: number },
+  ranges: Array<{ start: number; end: number }>
+): boolean {
+  return ranges.some((item) => item.start <= range.start && range.end <= item.end);
 }

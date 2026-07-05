@@ -379,10 +379,12 @@ export function askAgent(puzzleId: string, question: string): AgentReply {
   if (reagentId) {
     const reagent = findReagentById(reagentId);
     const reaction = getReagentReaction(compound, reagentId);
+    const answer = reaction.reacts
+      ? `能。${reaction.reason}${reaction.evidence ? ` 现象：${reaction.evidence}` : ''}`
+      : `不能。${reaction.reason}`;
+
     return {
-      answer: reaction.reacts
-        ? `能。${reaction.reason}${reaction.evidence ? ` 现象：${reaction.evidence}` : ''}`
-        : `不能。${reaction.reason}`,
+      answer: hideTargetFromAnswer(answer, compound),
       hintLevel: reaction.reacts ? 'strong' : 'medium',
       matchedTopic: reagent.name
     };
