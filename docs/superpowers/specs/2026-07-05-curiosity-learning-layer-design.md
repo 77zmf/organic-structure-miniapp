@@ -171,18 +171,28 @@ Tests:
 - Ethanol + acetic acid role selection feedback contains `羟基` and `羧基`.
 - Non-reactive pair can still be judged without forcing a reaction type.
 
-## Advanced Page: Evidence Board
+## Advanced Page: Formula, 3D Reveal, and Gaokao Question Bank
 
-Current role: formula-only puzzle with AI dialogue, no visible hints.
+Current role: formula-only puzzle with AI dialogue and a locked 3D reveal after the answer.
 
-New role: formula-only puzzle plus a blank evidence board that fills only after student action.
+New role: a high-level inference page built around `分子式 + 高考题库 + 3D 模型揭晓 + AI 证据板`.
 
 Changes:
 
-- Keep no quick questions.
-- Keep no opening hint.
-- Keep no evidence cards visible on initial render.
-- Add an empty `证据板` beside or below the formula panel.
+- Keep the molecular formula as the first visible anchor.
+- Add a `高考题库` selector or side list. Each item is a Gaokao-style inference task, not just a raw formula.
+- Each question card should include:
+  - `题目编号`
+  - `分子式`
+  - `考查点`
+  - `任务要求`
+  - optional public conditions such as relative molecular mass or common test context when the question needs it.
+- Keep no quick question buttons.
+- Do not show the target compound name or structure formula before the student answers correctly.
+- Show a `3D 模型` panel on the page:
+  - before unlock: display a locked model area with the current formula and text `答对后揭晓三维结构`.
+  - after correct structure guess: render the molecule's 3D model using the existing viewer.
+- Add an empty `证据板` next to the formula/model area.
 - Evidence board sections:
   - `已验证性质`
   - `排除方向`
@@ -192,11 +202,37 @@ Changes:
   - do not reveal target compound name.
 - When the student submits a structure guess:
   - if wrong, add to `当前猜想` as an attempted guess.
-  - if correct, existing unlock behavior reveals the 3D model.
+  - if correct, existing unlock behavior reveals the 3D model and the final structure.
+
+Gaokao question bank:
+
+- Use local static data, not a remote database.
+- Start with 8-12 questions.
+- Include formula inference questions across common high-school categories:
+  - alkene / alkyne addition and oxidation
+  - alcohol vs ether
+  - aldehyde silver mirror
+  - carboxylic acid and bicarbonate
+  - ester hydrolysis
+  - phenol color reaction and bromination
+  - benzene ring stability
+  - isomer screening using IR/NMR-style clues
+- Each question maps to an existing or newly added `FormulaPuzzle`.
+- Teacher can click `随机高考题` to switch questions.
+- Student can still use AI dialogue to ask experimental-property questions.
 
 Data model:
 
+- Add or extend a `GaokaoQuestion` local type:
+  - `id`
+  - `puzzleId`
+  - `title`
+  - `formula`
+  - `examFocus`
+  - `task`
+  - `publicClues`
 - Add `evidenceNotes` to app state.
+- Add `selectedGaokaoQuestionId` to app state.
 - Each note has:
   - `kind`: `verified` | `excluded` | `guess`
   - `text`: string
@@ -204,10 +240,14 @@ Data model:
 
 Tests:
 
-- Advanced page initial render has `证据板` but no notes.
+- Advanced page initial render shows `分子式`, `3D 模型`, and `高考题库`.
+- Advanced page initial render has `证据板` but no evidence notes.
+- Selecting a Gaokao question updates the formula and task text.
+- Clicking `随机高考题` switches to another question.
 - Sending a reagent question adds one `已验证性质` note.
 - Wrong structure guess adds a `当前猜想` note.
-- Initial advanced page still does not contain quick questions or textbook evidence hints.
+- Correct structure guess unlocks the 3D model.
+- Initial advanced page still does not contain quick question buttons or the target compound name.
 
 ## Data and State Changes
 
@@ -218,6 +258,7 @@ Add local state only:
 - `unsaturationPredictions`
 - `reagentPhenomenonGuess`
 - `pairRoleGuess`
+- `selectedGaokaoQuestionId`
 - `evidenceNotes`
 
 No backend change is required.
@@ -255,7 +296,9 @@ Manual browser checks:
   - unsaturation prediction feedback appears
   - reagent phenomenon feedback appears
   - pair role feedback appears
+  - advanced page shows formula, locked 3D model area, and Gaokao question bank
   - advanced evidence board starts empty and fills after student action
+  - correct advanced answer unlocks the 3D model
 - Mobile:
   - no horizontal overflow on method, unsaturation, reagent, pair, or advanced pages
   - evidence board remains readable
@@ -264,7 +307,7 @@ Deployment:
 
 - Run `npm test -- --run`.
 - Run `npm run build`.
-- Verify production bundle contains `今日追问`, `先预测现象`, and `证据板`.
+- Verify production bundle contains `今日追问`, `先预测现象`, `高考题库`, `3D 模型`, and `证据板`.
 
 ## Implementation Order
 
@@ -274,6 +317,5 @@ Deployment:
 4. Implement unsaturation prediction.
 5. Implement reagent phenomenon prediction.
 6. Implement pair reaction roles.
-7. Implement advanced evidence board.
+7. Implement advanced Gaokao question bank, locked 3D reveal, and evidence board.
 8. Run full tests, browser checks, commit, push, and deploy.
-
