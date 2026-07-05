@@ -10,7 +10,8 @@
     "test": "vitest"
   },
   "dependencies": {
-    "lucide": "^1.23.0"
+    "lucide": "^1.23.0",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@types/node": "^26.1.0",
