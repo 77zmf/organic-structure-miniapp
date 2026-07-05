@@ -129,7 +129,7 @@ h3 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 14px;
   color: var(--ink);
   font-weight: 700;
@@ -680,7 +680,7 @@ button svg {
 }
 
 .quick-question {
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 12px;
   color: var(--teal-dark);
   font-size: 13px;
