@@ -115,6 +115,63 @@ describe('app reagent practice modes', () => {
     expect(root.innerHTML).toContain('正确：会反应');
     expect(root.innerHTML).toContain('现象预测正确：褪色');
   });
+
+  test('advancing reagent challenge resets phenomenon prediction and feedback', async () => {
+    const challengeMode = createReagentPracticeModeButton('challenge');
+    const decolorizePrediction = createPhenomenonButton('decolorize');
+    const yesAnswer = createAnswerButton('yes');
+    const noAnswer = createAnswerButton('no');
+    const submitReagent = createActionButton('submit-reagent');
+    const advanceChallenge = createActionButton('advance-reagent-challenge');
+    const root = createRoot({
+      phenomenonButtons: [decolorizePrediction.button],
+      answerButtons: [yesAnswer.button, noAnswer.button],
+      actionButtons: [submitReagent.button, advanceChallenge.button],
+      reagentPracticeModeButtons: [challengeMode.button]
+    });
+
+    await importApp(root);
+    challengeMode.click();
+    decolorizePrediction.click();
+    const expectedAnswer = await getExpectedReagentAnswer(root.innerHTML);
+    expectedAnswer === 'yes' ? yesAnswer.click() : noAnswer.click();
+    submitReagent.click();
+
+    expect(root.innerHTML).toMatch(/现象预测正确|现象需要复盘/);
+
+    advanceChallenge.click();
+
+    expect(root.innerHTML).toContain(
+      'class="choice-chip" data-phenomenon="decolorize" type="button" aria-pressed="false"'
+    );
+    expect(root.innerHTML).not.toMatch(/现象预测正确|现象需要复盘/);
+  });
+
+  test('starting a new reagent question resets phenomenon prediction and feedback', async () => {
+    const decolorizePrediction = createPhenomenonButton('decolorize');
+    const yesAnswer = createAnswerButton('yes');
+    const submitReagent = createActionButton('submit-reagent');
+    const newReagent = createActionButton('new-reagent');
+    const root = createRoot({
+      phenomenonButtons: [decolorizePrediction.button],
+      answerButtons: [yesAnswer.button],
+      actionButtons: [submitReagent.button, newReagent.button]
+    });
+
+    await importApp(root);
+    decolorizePrediction.click();
+    yesAnswer.click();
+    submitReagent.click();
+
+    expect(root.innerHTML).toMatch(/现象预测正确|现象需要复盘/);
+
+    newReagent.click();
+
+    expect(root.innerHTML).toContain(
+      'class="choice-chip" data-phenomenon="decolorize" type="button" aria-pressed="false"'
+    );
+    expect(root.innerHTML).not.toMatch(/现象预测正确|现象需要复盘/);
+  });
 });
 
 describe('app pair classroom selection', () => {
@@ -550,6 +607,25 @@ function createReagentPracticeModeButton(reagentPracticeMode: string): {
     } as unknown as HTMLButtonElement,
     click: () => listener?.()
   };
+}
+
+async function getExpectedReagentAnswer(html: string): Promise<'yes' | 'no'> {
+  const { getReagentReaction } = await import('../src/chemistry');
+  const compoundId = matchHtmlAttribute(html, 'data-compound-id');
+  const reagentMatch = html.match(/class="choice-chip selected" data-reagent="([^"]+)"/);
+  if (!reagentMatch) {
+    throw new Error('Missing selected reagent in rendered HTML');
+  }
+
+  return getReagentReaction(compoundId, reagentMatch[1]).reacts ? 'yes' : 'no';
+}
+
+function matchHtmlAttribute(html: string, attribute: string): string {
+  const match = html.match(new RegExp(`${attribute}="([^"]+)"`));
+  if (!match) {
+    throw new Error(`Missing ${attribute} in rendered HTML`);
+  }
+  return match[1];
 }
 
 function createUnsaturationPredictionButton(unsaturationPrediction: string): {
