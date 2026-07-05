@@ -15,5 +15,5 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": ["src", "test", "vite.config.ts", "vitest.config.ts"]
+  "include": ["api", "shared", "src", "test", "vite.config.ts", "vitest.config.ts"]
 }

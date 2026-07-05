@@ -47,10 +47,12 @@ interface AppState {
   pairTypeGuess: string;
   pairFeedback: string;
   puzzleId: string;
+  proxyUrl: string;
   chatInput: string;
   chatMessages: ChatMessage[];
   structureGuess: string;
   puzzleFeedback: string;
+  proxyStatus: string;
 }
 
 const appRoot = getAppRoot();
@@ -67,6 +69,7 @@ const state: AppState = {
   pairTypeGuess: '',
   pairFeedback: '',
   puzzleId: 'puzzle-ethanol',
+  proxyUrl: getInitialProxyUrl(),
   chatInput: '',
   chatMessages: [
     {
@@ -75,7 +78,8 @@ const state: AppState = {
     }
   ],
   structureGuess: '',
-  puzzleFeedback: ''
+  puzzleFeedback: '',
+  proxyStatus: ''
 };
 
 render();
@@ -284,6 +288,9 @@ function renderPuzzleMode(): string {
             <h2>实验性质问答</h2>
           </div>
         </div>
+        <label class="input-label" for="proxy-url">DeepSeek 代理 URL</label>
+        <input id="proxy-url" class="text-input" value="${escapeHtml(state.proxyUrl)}" data-input="proxy-url" placeholder="例如：https://your-app.vercel.app/api/deepseek；留空则使用规则助手" />
+        <p class="proxy-status">${state.proxyUrl ? '已配置代理；请求失败会自动回退到规则助手。' : '当前使用本地规则助手。部署 Vercel 后可填入 /api/deepseek 或完整代理 URL。'}${state.proxyStatus ? ` ${escapeHtml(state.proxyStatus)}` : ''}</p>
         <div class="quick-questions">
           ${quickQuestion('能否与溴的四氯化碳溶液反应？')}
           ${quickQuestion('能否与金属钠反应？')}
@@ -485,6 +492,10 @@ function bindEvents(): void {
       if (kind === 'pair-type') state.pairTypeGuess = input.value;
       if (kind === 'chat') state.chatInput = input.value;
       if (kind === 'structure-guess') state.structureGuess = input.value;
+      if (kind === 'proxy-url') {
+        state.proxyUrl = input.value.trim();
+        localStorage.setItem('deepseekProxyUrl', state.proxyUrl);
+      }
     });
 
     input.addEventListener('keydown', (event) => {
@@ -588,17 +599,21 @@ function setPuzzle(puzzle: FormulaPuzzle): void {
   ];
 }
 
-function sendChat(): void {
+async function sendChat(): Promise<void> {
   const text = state.chatInput.trim();
   if (!text) return;
 
-  const reply = askAgent(state.puzzleId, text);
+  const history = state.chatMessages.slice(-8);
   state.chatMessages = [
     ...state.chatMessages,
-    { role: 'student', text },
-    { role: 'agent', text: reply.answer }
+    { role: 'student', text }
   ];
   state.chatInput = '';
+  state.proxyStatus = state.proxyUrl ? 'DeepSeek 请求中...' : '';
+  render();
+
+  const answer = await getAgentAnswer(text, history);
+  state.chatMessages = [...state.chatMessages, { role: 'agent', text: answer }];
   render();
 }
 
@@ -630,4 +645,49 @@ function escapeHtml(value: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function getInitialProxyUrl(): string {
+  const saved = localStorage.getItem('deepseekProxyUrl');
+  if (saved !== null) return saved;
+  const hostname = window.location.hostname;
+  if (hostname.endsWith('github.io') || hostname === 'localhost' || hostname === '127.0.0.1') {
+    return '';
+  }
+  return '/api/deepseek';
+}
+
+async function getAgentAnswer(question: string, history: ChatMessage[]): Promise<string> {
+  if (!state.proxyUrl) {
+    state.proxyStatus = '';
+    return askAgent(state.puzzleId, question).answer;
+  }
+
+  try {
+    const response = await fetch(state.proxyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        puzzleId: state.puzzleId,
+        question,
+        history
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`代理返回 ${response.status}`);
+    }
+
+    const data = (await response.json()) as { answer?: string; provider?: string };
+    if (!data.answer) {
+      throw new Error('代理没有返回 answer');
+    }
+
+    state.proxyStatus = data.provider === 'deepseek' ? 'DeepSeek 已回复。' : '已触发保护规则。';
+    return data.answer;
+  } catch (error) {
+    const fallback = askAgent(state.puzzleId, question).answer;
+    state.proxyStatus = `代理不可用，已回退到规则助手：${error instanceof Error ? error.message : '未知错误'}`;
+    return fallback;
+  }
 }
