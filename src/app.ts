@@ -45,7 +45,7 @@ import {
   type ChallengeSession,
   type ReagentPracticeMode
 } from './reagentPractice';
-import { curiosityQuestions } from './curiosity';
+import { curiosityQuestions, methodNodeDetails } from './curiosity';
 
 type Mode = 'method' | 'unsaturation' | 'reagent' | 'pair' | 'puzzle';
 type YesNo = 'yes' | 'no' | null;
@@ -83,6 +83,7 @@ interface AppState {
   chatPending: boolean;
   proxyCheckPending: boolean;
   curiosityQuestionIndex: number;
+  selectedMethodNodeId: string;
 }
 
 const appRoot = getAppRoot();
@@ -124,7 +125,8 @@ const state: AppState = {
   proxyStatus: '',
   chatPending: false,
   proxyCheckPending: false,
-  curiosityQuestionIndex: 0
+  curiosityQuestionIndex: 0,
+  selectedMethodNodeId: 'unsaturation'
 };
 
 render();
@@ -254,7 +256,7 @@ function renderMethodMode(): string {
       <section class="method-panel">
         <div class="method-hero">
           <p class="section-kicker">方法指引</p>
-          <h2>有机化合物结构测定路线</h2>
+          <h2>破案路线图</h2>
         </div>
 
         <div class="guide-grid">
@@ -266,12 +268,12 @@ function renderMethodMode(): string {
                 <div>
                   <span class="flow-tag">定性定量分析</span>
                   <div class="flow-arrow">↓</div>
-                  <div class="flow-node">元素组成</div>
+                  ${renderMethodNode('composition', '元素组成')}
                 </div>
                 <div>
                   <span class="flow-tag">相对分子质量测定</span>
                   <div class="flow-arrow">↓</div>
-                  <div class="flow-node">相对分子质量</div>
+                  ${renderMethodNode('mass', '相对分子质量')}
                 </div>
                 <div>
                   <span class="flow-tag">化学分析或仪器分析</span>
@@ -298,22 +300,55 @@ function renderMethodMode(): string {
               <div class="flow-node main-node">有机化合物分子式</div>
               <div class="flow-lane two-lane">
                 <div>
-                  <span class="flow-tag">计算不饱和度</span>
+                  ${renderMethodNode('unsaturation', '计算不饱和度')}
                   <div class="flow-arrow">↓</div>
                   <div class="flow-node">推测化学键类型</div>
                 </div>
                 <div>
                   <span class="flow-tag">化学性质实验或仪器分析图谱</span>
                   <div class="flow-arrow">↓</div>
-                  <div class="flow-node">判断官能团种类及官能团所处位置</div>
+                  ${renderMethodNode('functional-group', '判断官能团种类及官能团所处位置')}
                 </div>
               </div>
               <div class="flow-arrow">↓</div>
-              <div class="flow-node final-node">确定有机化合物结构式</div>
+              ${renderMethodNode('structure', '确定有机化合物结构式', 'final-node')}
             </div>
           </article>
         </div>
+        ${renderMethodDetailPanel()}
       </section>
+    </section>
+  `;
+}
+
+function renderMethodNode(id: string, label: string, className = ''): string {
+  const active = state.selectedMethodNodeId === id;
+  return `
+    <button class="flow-node ${className} ${active ? 'active' : ''}" data-method-node="${id}" type="button" aria-pressed="${active}">
+      ${escapeHtml(label)}
+    </button>
+  `;
+}
+
+function renderMethodDetailPanel(): string {
+  const detail = methodNodeDetails.find((node) => node.id === state.selectedMethodNodeId) ?? methodNodeDetails[0];
+  return `
+    <section class="method-detail-panel" aria-label="路线节点说明">
+      <p class="section-kicker">${escapeHtml(detail.label)}</p>
+      <dl>
+        <div>
+          <dt>能告诉我们</dt>
+          <dd>${escapeHtml(detail.tells)}</dd>
+        </div>
+        <div>
+          <dt>还不能确定</dt>
+          <dd>${escapeHtml(detail.cannotTell)}</dd>
+        </div>
+        <div>
+          <dt>课堂例子</dt>
+          <dd>${escapeHtml(detail.example)}</dd>
+        </div>
+      </dl>
     </section>
   `;
 }
@@ -971,6 +1006,13 @@ function bindEvents(): void {
   appRoot.querySelectorAll<HTMLButtonElement>('[data-reagent-practice-mode]').forEach((button) => {
     button.addEventListener('click', () => {
       setReagentPracticeMode(button.dataset.reagentPracticeMode as ReagentPracticeMode);
+    });
+  });
+
+  appRoot.querySelectorAll<HTMLButtonElement>('[data-method-node]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.selectedMethodNodeId = button.dataset.methodNode ?? state.selectedMethodNodeId;
+      render();
     });
   });
 

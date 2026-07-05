@@ -141,6 +141,21 @@ describe('app curiosity bar', () => {
   });
 });
 
+describe('app method route details', () => {
+  test('renders clickable route nodes and method detail panel', async () => {
+    const methodTab = createModeButton('method');
+    const root = createRoot({ modeButtons: [methodTab.button] });
+
+    await importApp(root);
+    methodTab.click();
+
+    expect(root.innerHTML).toContain('破案路线图');
+    expect(root.innerHTML).toContain('data-method-node="unsaturation"');
+    expect(root.innerHTML).toContain('能告诉我们');
+    expect(root.innerHTML).toContain('还不能确定');
+  });
+});
+
 async function importApp(root: HTMLDivElement): Promise<void> {
   vi.stubGlobal('document', {
     querySelector: (selector: string) => (selector === '#app' ? root : null)
