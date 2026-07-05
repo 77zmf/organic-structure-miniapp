@@ -199,9 +199,9 @@ function render(): void {
       <nav class="mode-tabs" aria-label="学习模式">
         ${modeButton('method', '方法', '结构测定路径', 'map')}
         ${modeButton('unsaturation', '不饱和', '公式计算', 'calculator')}
-        ${modeButton('reagent', '基础', '试剂反应', 'beaker')}
-        ${modeButton('pair', '进阶', '有机物间反应', 'flask-conical')}
-        ${modeButton('puzzle', '高阶', '分子式推理', 'brain')}
+        ${modeButton('reagent', '基础·学习理解', '试剂反应', 'beaker')}
+        ${modeButton('pair', '进阶·应用实践', '有机物间反应', 'flask-conical')}
+        ${modeButton('puzzle', '高阶·迁移创新', '分子式推理', 'brain')}
       </nav>
 
       ${renderCuriosityBar()}
@@ -587,12 +587,12 @@ function renderReagentMode(): string {
   const challengePassed = isChallenge && state.reagentChallengeSession.canAdvance;
 
   return `
-    <section class="workspace two-column" aria-label="基础试剂反应判断">
+    <section class="workspace two-column" aria-label="基础学习理解试剂反应判断">
       ${renderReagentCompoundPanel(compound)}
       <section class="task-panel">
         <div class="panel-title-row">
           <div>
-            <p class="section-kicker">基础判断</p>
+            <p class="section-kicker">基础·学习理解</p>
             <h2>${isChallenge ? challengeTitle() : `${compound.name} 与试剂`}</h2>
           </div>
           <button class="icon-text-button" data-action="${isChallenge ? 'restart-reagent-challenge' : 'new-reagent'}" type="button">
@@ -676,7 +676,7 @@ function renderPairMode(): string {
   const second = findCompoundById(state.pairSecondId);
 
   return `
-    <section class="workspace two-column pair-layout" aria-label="进阶有机物间反应判断">
+    <section class="workspace two-column pair-layout" aria-label="进阶应用实践有机物间反应判断">
       <section class="compound-pair">
         ${renderSelectablePairCompound(first, 'first', '选择左侧分子')}
         <div class="reaction-mark">+</div>
@@ -686,7 +686,7 @@ function renderPairMode(): string {
       <section class="task-panel">
         <div class="panel-title-row">
           <div>
-            <p class="section-kicker">进阶判断</p>
+            <p class="section-kicker">进阶·应用实践</p>
             <h2>${first.name} 与 ${second.name}</h2>
           </div>
           <button class="icon-text-button" data-action="new-pair" type="button">
@@ -763,11 +763,11 @@ function renderPuzzleMode(): string {
   const formattedFormula = formatChemicalFormula(puzzle.formula);
 
   return `
-    <section class="workspace puzzle-layout" aria-label="高阶分子式结构推理">
+    <section class="workspace puzzle-layout" aria-label="高阶迁移创新分子式结构推理">
       <section class="formula-panel">
         <div class="panel-title-row">
           <div>
-            <p class="section-kicker">高阶推理</p>
+            <p class="section-kicker">高阶·迁移创新</p>
             <h2>分子式 <span class="chem-formula">${formattedFormula}</span></h2>
           </div>
           <button class="icon-text-button" data-action="new-puzzle" type="button">

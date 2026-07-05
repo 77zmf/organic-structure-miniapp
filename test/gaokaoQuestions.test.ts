@@ -4,8 +4,8 @@ import { gaokaoQuestions } from '../src/gaokaoQuestions';
 
 describe('gaokao question bank', () => {
   test('contains a classroom-sized local question bank', () => {
-    expect(gaokaoQuestions.length).toBeGreaterThanOrEqual(8);
-    expect(gaokaoQuestions.length).toBeLessThanOrEqual(12);
+    expect(gaokaoQuestions.length).toBeGreaterThanOrEqual(16);
+    expect(gaokaoQuestions.length).toBeLessThanOrEqual(20);
   });
 
   test('every question maps to an existing formula puzzle', () => {
@@ -52,5 +52,8 @@ describe('gaokao question bank', () => {
     expect(focusText).toContain('酯');
     expect(focusText).toContain('苯环');
     expect(focusText).toContain('同分异构体');
+    expect(focusText).toContain('酮羰基');
+    expect(focusText).toContain('甲醛');
+    expect(focusText).toContain('酯化');
   });
 });

@@ -98,5 +98,59 @@ export const gaokaoQuestions: GaokaoQuestion[] = [
     examFocus: ['同分异构体', '红外识别官能团', '核磁氢谱面积比'],
     task: '在多个醇和醚的候选结构中，根据实验性质锁定结构。',
     publicClues: ['不饱和度为 0', '红外有宽强 O-H 吸收', '氢谱有五组信号']
+  },
+  {
+    id: 'gk-formaldehyde-reduction',
+    puzzleId: 'puzzle-formaldehyde',
+    title: '甲醛的还原性与银镜反应',
+    formula: 'CH2O',
+    examFocus: ['甲醛', '银镜反应', '醛基氧化'],
+    task: '根据分子式和弱氧化剂实验现象，判断是否存在醛基并说明氧化产物方向。',
+    publicClues: ['只含一个碳原子', '不饱和度为 1', '可与银氨溶液反应']
+  },
+  {
+    id: 'gk-formaldehyde-polycondensation',
+    puzzleId: 'puzzle-formaldehyde',
+    title: '甲醛参与缩聚反应判断',
+    formula: 'CH2O',
+    examFocus: ['甲醛', '缩聚反应', '酚醛树脂'],
+    task: '结合甲醛与苯酚的反应特点，判断其在有机合成题中的连接作用。',
+    publicClues: ['含醛基', '可作为缩聚反应中的小分子连接单元']
+  },
+  {
+    id: 'gk-ketone-carbonyl',
+    puzzleId: 'puzzle-acetone',
+    title: '酮羰基与醛基的实验鉴别',
+    formula: 'C3H6O',
+    examFocus: ['酮羰基', '醛酮鉴别', '银镜反应排除'],
+    task: '同为含羰基分子，结合银镜反应和红外信息判断该物质是否为酮。',
+    publicClues: ['不饱和度为 1', '红外可见 C=O 吸收', '银氨溶液中无银镜现象']
+  },
+  {
+    id: 'gk-acid-esterification',
+    puzzleId: 'puzzle-acetic-acid',
+    title: '羧酸的酯化反应条件',
+    formula: 'C2H4O2',
+    examFocus: ['羧酸', '酯化反应', '可逆反应'],
+    task: '判断该物质能否与乙醇在浓硫酸加热条件下生成酯，并说明官能团依据。',
+    publicClues: ['含两个氧原子', '能与碳酸氢钠放出 CO2', '可与醇发生酯化']
+  },
+  {
+    id: 'gk-phenol-acidity',
+    puzzleId: 'puzzle-phenol',
+    title: '酚羟基酸性与取代综合',
+    formula: 'C6H6O',
+    examFocus: ['酚羟基', '酸性比较', '溴水取代'],
+    task: '比较酚羟基与醇羟基的性质差异，并用氢氧化钠和溴水实验验证。',
+    publicClues: ['可与 NaOH 反应', '遇 FeCl3 显色', '可使溴水褪色并生成沉淀']
+  },
+  {
+    id: 'gk-benzene-substitution',
+    puzzleId: 'puzzle-benzene',
+    title: '苯环取代与加成辨析',
+    formula: 'C6H6',
+    examFocus: ['苯环', '取代反应', '加成反应辨析'],
+    task: '解释苯不直接使溴的四氯化碳溶液褪色，但在催化剂条件下可发生取代反应。',
+    publicClues: ['不饱和度为 4', '常温下不表现普通烯烃加成性质', '可发生苯环取代']
   }
 ];

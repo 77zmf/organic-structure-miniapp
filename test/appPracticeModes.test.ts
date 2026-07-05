@@ -26,6 +26,18 @@ beforeEach(() => {
   vi.doUnmock('../src/curiosity');
 });
 
+describe('app learning dimension labels', () => {
+  test('renders the requested three learning dimension names', async () => {
+    const root = createRoot();
+
+    await importApp(root);
+
+    expect(root.innerHTML).toContain('基础·学习理解');
+    expect(root.innerHTML).toContain('进阶·应用实践');
+    expect(root.innerHTML).toContain('高阶·迁移创新');
+  });
+});
+
 describe('app reagent practice modes', () => {
   test('renders self-test molecule picker and challenge entry in reagent mode', async () => {
     const root = createRoot();

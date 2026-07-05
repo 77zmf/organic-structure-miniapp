@@ -334,6 +334,27 @@ export const formulaPuzzles: FormulaPuzzle[] = [
     targetCompoundId: 'formaldehyde',
     openingHint: '可先判断是否含醛基，银镜反应很关键。',
     possibleStructures: ['甲醛']
+  },
+  {
+    id: 'puzzle-acetone',
+    formula: 'C3H6O',
+    targetCompoundId: 'acetone',
+    openingHint: '同为含羰基有机物，可用银镜反应区分醛和酮。',
+    possibleStructures: ['丙酮', '丙醛', '丙烯醇'],
+    difficulty: '高考',
+    evidenceCards: [
+      {
+        title: '不饱和度',
+        detail: 'C3H6O 的不饱和度为 1。',
+        inference: '可能含 C=O、C=C 或环，需要用官能团性质继续筛选。'
+      },
+      {
+        title: '官能团检验',
+        detail: '不能发生银镜反应，但红外可见 C=O 吸收。',
+        inference: '支持酮羰基而不是醛基。'
+      }
+    ],
+    examFocus: ['酮羰基', '醛酮鉴别', '银镜反应排除']
   }
 ];
 
