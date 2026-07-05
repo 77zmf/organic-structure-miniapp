@@ -531,7 +531,7 @@ function matchOtherCompound(normalized: string, hiddenCompound: Compound): Compo
 
     for (const alias of compound.aliases) {
       const normalizedAlias = normalize(alias);
-      if (normalized.includes(normalizedAlias)) {
+      if (isCompoundPartnerAliasMatch(normalized, normalizedAlias)) {
         matches.push({ compound, aliasLength: normalizedAlias.length });
       }
     }
@@ -543,6 +543,24 @@ function matchOtherCompound(normalized: string, hiddenCompound: Compound): Compo
       return best;
     }, null)?.compound ?? null
   );
+}
+
+function isCompoundPartnerAliasMatch(normalized: string, normalizedAlias: string): boolean {
+  const partnerLinks = ['加入', '以及', '可以与', '可以和', '能与', '能和', '可与', '可和', '同', '跟', '与', '和', '加'];
+  const nonPartnerSuffixes = ['环', '基', '的'];
+  let index = normalized.indexOf(normalizedAlias);
+
+  while (index !== -1) {
+    const before = normalized.slice(0, index);
+    const after = normalized.slice(index + normalizedAlias.length);
+    const hasPartnerLink = partnerLinks.some((link) => before.endsWith(link));
+    const hasNonPartnerSuffix = nonPartnerSuffixes.some((suffix) => after.startsWith(suffix));
+
+    if (hasPartnerLink && !hasNonPartnerSuffix) return true;
+    index = normalized.indexOf(normalizedAlias, index + normalizedAlias.length);
+  }
+
+  return false;
 }
 
 function hideTargetFromAnswer(answer: string, compound: Compound, visibleCompounds: Compound[] = []): string {

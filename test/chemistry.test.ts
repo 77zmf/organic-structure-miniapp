@@ -145,6 +145,20 @@ describe('formula puzzle agent', () => {
     expect(reply.matchedTopic).toBe('fallback');
   });
 
+  test('agent does not treat benzene ring substitution questions as benzene-pair reactions', () => {
+    const reply = askAgent('puzzle-phenol', '它的苯环能发生取代反应吗？');
+
+    expect(reply.answer).not.toContain('可直接配对');
+    expect(reply.matchedTopic).not.toBe('苯');
+  });
+
+  test('agent does not treat reactive benzene ring mentions as benzene-pair reactions', () => {
+    const reply = askAgent('puzzle-phenol', '它含有苯环会反应吗？');
+
+    expect(reply.answer).not.toContain('可直接配对');
+    expect(reply.matchedTopic).not.toBe('苯');
+  });
+
   test('agent does not treat formula comparison mentions as organic-pair reactions', () => {
     const reply = askAgent('puzzle-phenol', '它的分子式和苯一样吗？');
 
