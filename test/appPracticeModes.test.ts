@@ -489,6 +489,56 @@ describe('app chemistry notation and advanced puzzle clues', () => {
     expect(root.innerHTML).toContain('已尝试：乙醇');
     expect(root.innerHTML).toContain('还不对');
   });
+
+  test('repeating the same wrong structure guess keeps one evidence note', async () => {
+    const puzzleTab = createModeButton('puzzle');
+    const guessInput = createInput('structure-guess', '乙醇');
+    const submitGuess = createActionButton('submit-guess');
+    const root = createRoot({
+      modeButtons: [puzzleTab.button],
+      actionButtons: [submitGuess.button],
+      inputElements: [guessInput.input]
+    });
+
+    await importApp(root);
+    puzzleTab.click();
+
+    guessInput.inputEvent();
+    submitGuess.click();
+    submitGuess.click();
+
+    expect(countOccurrences(root.innerHTML, '已尝试：乙醇')).toBe(1);
+  });
+
+  test('proxy answer displays remote text and adds local evidence note', async () => {
+    const puzzleTab = createModeButton('puzzle');
+    const sendChat = createActionButton('send-chat');
+    const proxyUrlInput = createInput('proxy-url', '/api/deepseek');
+    const chatInput = createInput('chat', '能与金属钠反应吗？');
+    const root = createRoot({
+      modeButtons: [puzzleTab.button],
+      actionButtons: [sendChat.button],
+      inputElements: [proxyUrlInput.input, chatInput.input]
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ answer: 'DeepSeek 代理回答：可以作为远程解释。', provider: 'deepseek' })
+      }))
+    );
+
+    await importApp(root);
+    puzzleTab.click();
+    proxyUrlInput.inputEvent();
+    chatInput.inputEvent();
+    sendChat.click();
+    await flushPromises();
+
+    expect(root.innerHTML).toContain('DeepSeek 代理回答：可以作为远程解释。');
+    expect(root.innerHTML).toContain('金属钠：能。');
+    expect(root.innerHTML).toContain('DeepSeek 已回复');
+  });
 });
 
 describe('app method and unsaturation pages', () => {
@@ -958,6 +1008,16 @@ function getSelectedGaokaoQuestionId(html: string): string {
     throw new Error('Missing selected gaokao question option');
   }
   return selectedMatch[1];
+}
+
+function countOccurrences(value: string, needle: string): number {
+  return value.split(needle).length - 1;
+}
+
+async function flushPromises(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
 }
 
 function createUnsaturationPredictionButton(unsaturationPrediction: string): {

@@ -76,6 +76,7 @@ interface ChatMessage {
 interface AgentAnswerResult {
   answer: string;
   evidenceNote?: EvidenceNote;
+  proxyStatus?: string;
 }
 
 interface PairRolePredictions {
@@ -1711,27 +1712,44 @@ async function sendChat(): Promise<void> {
 
   const requestId = ++chatRequestId;
   const puzzleId = state.puzzleId;
+  const proxyUrl = state.proxyUrl;
   const history = state.chatMessages.slice(-8);
   state.chatMessages = [
     ...state.chatMessages,
     { role: 'student', text }
   ];
   state.chatInput = '';
-  state.proxyStatus = state.proxyUrl ? 'DeepSeek 请求中...' : '';
+  state.proxyStatus = proxyUrl ? 'DeepSeek 请求中...' : '';
   state.chatPending = true;
   render();
 
-  const answerResult = await getAgentAnswer(text, history);
+  const answerResult = await getAgentAnswer(puzzleId, proxyUrl, text, history);
   if (requestId !== chatRequestId || puzzleId !== state.puzzleId) {
     return;
   }
 
   state.chatPending = false;
+  if (answerResult.proxyStatus !== undefined) {
+    state.proxyStatus = answerResult.proxyStatus;
+  }
   state.chatMessages = [...state.chatMessages, { role: 'agent', text: answerResult.answer }];
   if (answerResult.evidenceNote) {
-    state.evidenceNotes = [...state.evidenceNotes, answerResult.evidenceNote];
+    appendEvidenceNote(answerResult.evidenceNote);
   }
   render();
+}
+
+function appendEvidenceNote(note: EvidenceNote): void {
+  const key = evidenceNoteKey(note);
+  if (state.evidenceNotes.some((existingNote) => evidenceNoteKey(existingNote) === key)) {
+    return;
+  }
+
+  state.evidenceNotes = [...state.evidenceNotes, note];
+}
+
+function evidenceNoteKey(note: EvidenceNote): string {
+  return `${note.kind}:${normalizeLoose(note.text)}`;
 }
 
 function submitGuess(): void {
@@ -1755,7 +1773,7 @@ function submitGuess(): void {
   state.puzzleUnlocked = unlockState.unlocked;
   state.puzzleUnlockedCompoundId = unlockState.unlockedCompoundId;
   if (!result.correct) {
-    state.evidenceNotes = [...state.evidenceNotes, { kind: 'guess', text: `已尝试：${guess}` }];
+    appendEvidenceNote({ kind: 'guess', text: `已尝试：${guess}` });
   }
   render();
 }
@@ -1849,25 +1867,33 @@ async function checkProxyStatus(): Promise<void> {
   }
 }
 
-function createAgentAnswerResult(reply: AgentReply): AgentAnswerResult {
+function createAgentAnswerResult(
+  reply: AgentReply,
+  options: { answer?: string; proxyStatus?: string } = {}
+): AgentAnswerResult {
   return {
-    answer: reply.answer,
-    evidenceNote: createEvidenceNoteFromAgentReply(reply)
+    answer: options.answer ?? reply.answer,
+    evidenceNote: createEvidenceNoteFromAgentReply(reply),
+    proxyStatus: options.proxyStatus ?? ''
   };
 }
 
-async function getAgentAnswer(question: string, history: ChatMessage[]): Promise<AgentAnswerResult> {
-  if (!state.proxyUrl) {
-    state.proxyStatus = '';
-    return createAgentAnswerResult(askAgent(state.puzzleId, question));
+async function getAgentAnswer(
+  puzzleId: string,
+  proxyUrl: string,
+  question: string,
+  history: ChatMessage[]
+): Promise<AgentAnswerResult> {
+  if (!proxyUrl) {
+    return createAgentAnswerResult(askAgent(puzzleId, question));
   }
 
   try {
-    const response = await fetch(state.proxyUrl, {
+    const response = await fetch(proxyUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        puzzleId: state.puzzleId,
+        puzzleId,
         question,
         history
       })
@@ -1883,12 +1909,15 @@ async function getAgentAnswer(question: string, history: ChatMessage[]): Promise
       throw new Error('代理没有返回 answer');
     }
 
-    state.proxyStatus = data.provider === 'deepseek' ? 'DeepSeek 已回复。' : '已触发保护规则。';
-    return { answer: data.answer };
+    return createAgentAnswerResult(askAgent(puzzleId, question), {
+      answer: data.answer,
+      proxyStatus: data.provider === 'deepseek' ? 'DeepSeek 已回复。' : '已触发保护规则。'
+    });
   } catch (error) {
-    const fallback = askAgent(state.puzzleId, question);
-    state.proxyStatus = `代理不可用，已回退到规则助手：${error instanceof Error ? error.message : '未知错误'}`;
-    return createAgentAnswerResult(fallback);
+    const fallback = askAgent(puzzleId, question);
+    return createAgentAnswerResult(fallback, {
+      proxyStatus: `代理不可用，已回退到规则助手：${error instanceof Error ? error.message : '未知错误'}`
+    });
   }
 }
 
