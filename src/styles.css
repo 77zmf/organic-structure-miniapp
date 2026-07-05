@@ -151,9 +151,59 @@ button svg {
   box-shadow: inset 0 0 0 1px rgba(19, 123, 114, 0.18);
 }
 
+.viewer-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+
+.segmented-control {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(108px, 1fr));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.segment-button,
+.toggle-button {
+  min-height: 40px;
+  border: 0;
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.segment-button {
+  padding: 0 14px;
+}
+
+.segment-button + .segment-button {
+  border-left: 1px solid var(--line);
+}
+
+.segment-button.active,
+.toggle-button.active {
+  background: #eaf6f3;
+  color: var(--teal-dark);
+}
+
+.toggle-button {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 14px;
+}
+
 .workspace {
   display: grid;
   gap: 16px;
+}
+
+.workspace > * {
+  min-width: 0;
 }
 
 .two-column {
@@ -165,6 +215,7 @@ button svg {
 .formula-panel,
 .chat-panel,
 .compound-mini {
+  min-width: 0;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.92);
@@ -209,23 +260,34 @@ button svg {
   min-width: 82px;
 }
 
-.molecule-svg {
+.molecule-viewer {
   display: block;
   width: 100%;
+  min-height: 310px;
   aspect-ratio: 13 / 8.5;
   margin: 14px 0;
-  color: var(--blue);
   border: 1px solid #dbe4dd;
   border-radius: 8px;
+  overflow: hidden;
   background:
     radial-gradient(circle at 20% 20%, rgba(198, 134, 31, 0.12), transparent 26%),
     linear-gradient(135deg, rgba(49, 95, 156, 0.08), rgba(19, 123, 114, 0.06));
 }
 
-.molecule-svg text {
-  fill: currentColor;
-  font-size: 22px;
-  font-weight: 800;
+.molecule-viewer canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.molecule-viewer.compact {
+  min-height: 260px;
+  aspect-ratio: 1 / 1;
+}
+
+.molecule-viewer.puzzle-target {
+  min-height: 280px;
+  margin-bottom: 0;
 }
 
 .compound-facts {
@@ -316,6 +378,7 @@ button svg {
 
 .text-input {
   width: 100%;
+  min-width: 0;
   min-height: 42px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -406,6 +469,57 @@ button svg {
   color: var(--blue);
   font-size: 44px;
   font-weight: 900;
+}
+
+.locked-visualization,
+.puzzle-target-panel {
+  margin: 16px 0;
+  border: 1px solid #dbe4dd;
+  border-radius: 8px;
+  background: #fbfcfa;
+}
+
+.locked-visualization {
+  display: grid;
+  place-items: center;
+  min-height: 280px;
+  padding: 20px;
+  text-align: center;
+}
+
+.locked-visualization span,
+.puzzle-target-title span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.locked-visualization strong {
+  color: var(--blue);
+  font-size: 42px;
+  line-height: 1.15;
+}
+
+.locked-visualization p {
+  max-width: 300px;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.puzzle-target-panel {
+  padding: 14px;
+}
+
+.puzzle-target-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.puzzle-target-title strong {
+  font-size: 18px;
 }
 
 .inline-form,
@@ -511,10 +625,20 @@ button svg {
   }
 
   .mode-tabs,
+  .viewer-controls,
   .two-column,
   .puzzle-layout,
   .compound-pair {
     grid-template-columns: 1fr;
+  }
+
+  .viewer-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .segmented-control {
+    width: 100%;
   }
 
   .reaction-mark {
@@ -551,6 +675,10 @@ button svg {
   }
 
   .formula-display {
+    font-size: 36px;
+  }
+
+  .locked-visualization strong {
     font-size: 36px;
   }
 

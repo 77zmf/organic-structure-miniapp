@@ -27,7 +27,8 @@ import {
   getReagentReaction,
   reagents
 } from './chemistry';
-import type { DisplayMode } from './moleculeModels';
+import { getMoleculeModel, type DisplayMode } from './moleculeModels';
+import { createMoleculeViewer, type MoleculeViewer } from './moleculeViewer';
 import { createPuzzleUnlockState, updatePuzzleUnlockWithGuess } from './puzzleUnlock';
 
 type Mode = 'reagent' | 'pair' | 'puzzle';
@@ -65,6 +66,7 @@ interface AppState {
 
 const appRoot = getAppRoot();
 let chatRequestId = 0;
+const mountedMoleculeViewers: MoleculeViewer[] = [];
 const initialPuzzleUnlock = createPuzzleUnlockState('puzzle-ethanol');
 
 const state: AppState = {
@@ -108,6 +110,8 @@ function getAppRoot(): HTMLDivElement {
 }
 
 function render(): void {
+  disposeMountedMoleculeViewers();
+
   appRoot.innerHTML = `
     <main class="app-shell">
       <header class="topbar">
@@ -126,6 +130,8 @@ function render(): void {
         ${modeButton('pair', '进阶', '有机物间反应', 'flask-conical')}
         ${modeButton('puzzle', '高阶', '分子式推理', 'brain')}
       </nav>
+
+      ${renderViewerControls()}
 
       ${state.mode === 'reagent' ? renderReagentMode() : ''}
       ${state.mode === 'pair' ? renderPairMode() : ''}
@@ -148,6 +154,7 @@ function render(): void {
       XCircle
     }
   });
+  mountMoleculeViewers();
 }
 
 function modeButton(mode: Mode, label: string, detail: string, icon: string): string {
@@ -159,6 +166,82 @@ function modeButton(mode: Mode, label: string, detail: string, icon: string): st
       <small>${detail}</small>
     </button>
   `;
+}
+
+function renderViewerControls(): string {
+  return `
+    <section class="viewer-controls" aria-label="三维模型显示设置">
+      <div class="segmented-control" role="group" aria-label="模型显示方式">
+        ${viewerModeButton('ball-stick', '球棍')}
+        ${viewerModeButton('space-fill', '空间填充')}
+      </div>
+      <button class="toggle-button ${state.highlightFunctionalGroup ? 'active' : ''}" data-toggle-highlight="functional-group" type="button" aria-pressed="${state.highlightFunctionalGroup}">
+        官能团高亮
+      </button>
+    </section>
+  `;
+}
+
+function viewerModeButton(displayMode: DisplayMode, label: string): string {
+  const active = state.viewerDisplayMode === displayMode;
+  return `
+    <button class="segment-button ${active ? 'active' : ''}" data-viewer-display-mode="${displayMode}" type="button" aria-pressed="${active}">
+      ${label}
+    </button>
+  `;
+}
+
+interface MoleculeViewerMountSpec {
+  compoundId: string;
+  displayMode: DisplayMode;
+  highlightId: FunctionalGroup | null;
+}
+
+export function getMoleculeViewerMountSpec(
+  compoundId: string,
+  displayMode: DisplayMode,
+  highlightEnabled: boolean
+): MoleculeViewerMountSpec {
+  const model = getMoleculeModel(compoundId);
+  return {
+    compoundId: model.compoundId,
+    displayMode,
+    highlightId: highlightEnabled ? (model.highlights[0]?.id ?? null) : null
+  };
+}
+
+export function getPuzzleMoleculeViewerMountSpec(
+  unlocked: boolean,
+  unlockedCompoundId: string | null,
+  displayMode: DisplayMode,
+  highlightEnabled: boolean
+): MoleculeViewerMountSpec | null {
+  if (!unlocked || !unlockedCompoundId) {
+    return null;
+  }
+  return getMoleculeViewerMountSpec(unlockedCompoundId, displayMode, highlightEnabled);
+}
+
+function mountMoleculeViewers(): void {
+  appRoot.querySelectorAll<HTMLElement>('[data-molecule-viewer]').forEach((container) => {
+    const compoundId = container.dataset.compoundId;
+    if (!compoundId) {
+      return;
+    }
+
+    const spec = getMoleculeViewerMountSpec(compoundId, state.viewerDisplayMode, state.highlightFunctionalGroup);
+    const viewer = createMoleculeViewer(container, getMoleculeModel(spec.compoundId), {
+      displayMode: spec.displayMode,
+      highlightId: spec.highlightId
+    });
+    mountedMoleculeViewers.push(viewer);
+  });
+}
+
+function disposeMountedMoleculeViewers(): void {
+  while (mountedMoleculeViewers.length > 0) {
+    mountedMoleculeViewers.pop()?.dispose();
+  }
 }
 
 function renderReagentMode(): string {
@@ -277,6 +360,7 @@ function renderPuzzleMode(): string {
           </button>
         </div>
         <div class="formula-display">${puzzle.formula}</div>
+        ${renderPuzzleVisualization(puzzle)}
         <p class="hint-line">${puzzle.openingHint}</p>
         <div class="answer-strip">
           <label class="input-label" for="structure-guess">结构猜测</label>
@@ -337,7 +421,7 @@ function renderCompoundPanel(compound: Compound): string {
     <section class="compound-panel">
       <p class="section-kicker">当前有机物</p>
       <h2>${compound.name}</h2>
-      ${moleculeSketch(compound)}
+      ${renderMoleculeViewerHost(compound.id, `${compound.name}三维结构`)}
       <dl class="compound-facts">
         <div><dt>分子式</dt><dd>${compound.formula}</dd></div>
         <div><dt>结构简式</dt><dd>${compound.structureFormula}</dd></div>
@@ -355,82 +439,45 @@ function renderCompactCompound(compound: Compound): string {
         <p>${compound.formula}</p>
         <h3>${compound.name}</h3>
       </div>
-      ${moleculeSketch(compound)}
+      ${renderMoleculeViewerHost(compound.id, `${compound.name}三维结构`, 'compact')}
       <span>${compound.structureFormula}</span>
     </article>
   `;
 }
 
-function moleculeSketch(compound: Compound): string {
-  if (compound.functionalGroups.includes('arene')) {
-    const hasPhenol = compound.functionalGroups.includes('phenol');
+function renderPuzzleVisualization(puzzle: FormulaPuzzle): string {
+  const spec = getPuzzleMoleculeViewerMountSpec(
+    state.puzzleUnlocked,
+    state.puzzleUnlockedCompoundId,
+    state.viewerDisplayMode,
+    state.highlightFunctionalGroup
+  );
+
+  if (!spec) {
     return `
-      <svg class="molecule-svg" viewBox="0 0 260 170" role="img" aria-label="${compound.name}结构示意">
-        <polygon points="130,30 185,62 185,125 130,155 75,125 75,62" fill="none" stroke="currentColor" stroke-width="5" />
-        <circle cx="130" cy="93" r="36" fill="none" stroke="currentColor" stroke-width="3" opacity="0.45" />
-        ${hasPhenol ? '<line x1="185" y1="62" x2="225" y2="38" stroke="currentColor" stroke-width="5" /><text x="228" y="42">OH</text>' : ''}
-        <text x="105" y="100">${hasPhenol ? 'C6H5' : 'C6H6'}</text>
-      </svg>
+      <section class="locked-visualization" aria-label="分子式推理锁定面板">
+        <span>分子式</span>
+        <strong>${puzzle.formula}</strong>
+        <p>先根据实验性质推断结构；答对后显示三维模型。</p>
+      </section>
     `;
   }
 
-  if (compound.id === 'ethene') {
-    return structureSvg('H2C', 'CH2', '=', compound.name);
-  }
-  if (compound.id === 'acetylene') {
-    return structureSvg('HC', 'CH', '≡', compound.name);
-  }
-  if (compound.id === 'ethanol') {
-    return chainSvg(['CH3', 'CH2', 'OH'], compound.name);
-  }
-  if (compound.id === 'acetic-acid') {
-    return chainSvg(['CH3', 'COOH'], compound.name);
-  }
-  if (compound.id === 'acetaldehyde') {
-    return chainSvg(['CH3', 'CHO'], compound.name);
-  }
-  if (compound.id === 'ethyl-acetate') {
-    return chainSvg(['CH3', 'COO', 'CH2', 'CH3'], compound.name);
-  }
-
+  const compound = findCompoundById(spec.compoundId);
   return `
-    <svg class="molecule-svg" viewBox="0 0 260 170" role="img" aria-label="${compound.name}结构示意">
-      <rect x="48" y="48" width="164" height="74" rx="8" fill="none" stroke="currentColor" stroke-width="4" />
-      <text x="130" y="96" text-anchor="middle">${compound.structureFormula}</text>
-    </svg>
+    <section class="puzzle-target-panel">
+      <div class="puzzle-target-title">
+        <span>已解锁</span>
+        <strong>${compound.name}</strong>
+      </div>
+      ${renderMoleculeViewerHost(compound.id, `${compound.name}三维结构`, 'puzzle-target')}
+    </section>
   `;
 }
 
-function structureSvg(left: string, right: string, bond: string, label: string): string {
-  const y = bond === '≡' ? 93 : 90;
-  const lines =
-    bond === '='
-      ? '<line x1="105" y1="75" x2="155" y2="75" /><line x1="105" y1="105" x2="155" y2="105" />'
-      : '<line x1="105" y1="70" x2="155" y2="70" /><line x1="105" y1="90" x2="155" y2="90" /><line x1="105" y1="110" x2="155" y2="110" />';
-
+function renderMoleculeViewerHost(compoundId: string, label: string, variant = ''): string {
   return `
-    <svg class="molecule-svg" viewBox="0 0 260 170" role="img" aria-label="${label}结构示意">
-      <g stroke="currentColor" stroke-width="5" stroke-linecap="round">${lines}</g>
-      <text x="70" y="${y}" text-anchor="middle">${left}</text>
-      <text x="190" y="${y}" text-anchor="middle">${right}</text>
-    </svg>
-  `;
-}
-
-function chainSvg(parts: string[], label: string): string {
-  const start = parts.length === 2 ? 82 : parts.length === 3 ? 58 : 34;
-  const gap = parts.length === 4 ? 62 : 72;
-  return `
-    <svg class="molecule-svg" viewBox="0 0 260 170" role="img" aria-label="${label}结构示意">
-      ${parts
-        .map((part, index) => {
-          const x = start + index * gap;
-          const nextX = start + (index + 1) * gap;
-          const line = index < parts.length - 1 ? `<line x1="${x + 22}" y1="86" x2="${nextX - 22}" y2="86" stroke="currentColor" stroke-width="4" />` : '';
-          return `${line}<text x="${x}" y="93" text-anchor="middle">${part}</text>`;
-        })
-        .join('')}
-    </svg>
+    <div class="molecule-viewer ${variant}" data-molecule-viewer data-compound-id="${escapeHtml(compoundId)}" role="img" aria-label="${escapeHtml(label)}"></div>
   `;
 }
 
@@ -466,6 +513,20 @@ function bindEvents(): void {
   appRoot.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach((button) => {
     button.addEventListener('click', () => {
       state.mode = button.dataset.mode as Mode;
+      render();
+    });
+  });
+
+  appRoot.querySelectorAll<HTMLButtonElement>('[data-viewer-display-mode]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.viewerDisplayMode = button.dataset.viewerDisplayMode as DisplayMode;
+      render();
+    });
+  });
+
+  appRoot.querySelectorAll<HTMLButtonElement>('[data-toggle-highlight]').forEach((button) => {
+    button.addEventListener('click', () => {
+      state.highlightFunctionalGroup = !state.highlightFunctionalGroup;
       render();
     });
   });
