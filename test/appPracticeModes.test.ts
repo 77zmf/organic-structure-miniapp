@@ -37,6 +37,84 @@ describe('app reagent practice modes', () => {
     expect(root.innerHTML).toContain('data-input="self-test-compound"');
     expect(root.innerHTML).toContain('选择有机物');
   });
+
+  test('renders phenomenon prediction choices before reagent submission', async () => {
+    const root = createRoot();
+
+    await importApp(root);
+
+    expect(root.innerHTML).toContain('先预测现象');
+    expect(root.innerHTML).toContain('data-phenomenon="decolorize"');
+    expect(root.innerHTML).toContain('无明显现象');
+    expect(root.innerHTML.indexOf('先预测现象')).toBeLessThan(root.innerHTML.indexOf('data-action="submit-reagent"'));
+    expect(root.innerHTML).not.toContain('现象预测正确');
+    expect(root.innerHTML).not.toContain('现象需要复盘');
+  });
+
+  test('selects and resets reagent phenomenon predictions', async () => {
+    const decolorizePrediction = createPhenomenonButton('decolorize');
+    const sodiumReagent = createReagentButton('sodium');
+    const compoundInput = createInput('self-test-compound', 'ethanol');
+    const challengeMode = createReagentPracticeModeButton('challenge');
+    const root = createRoot({
+      phenomenonButtons: [decolorizePrediction.button],
+      reagentButtons: [sodiumReagent.button],
+      reagentPracticeModeButtons: [challengeMode.button],
+      inputElements: [compoundInput.input]
+    });
+
+    await importApp(root);
+
+    decolorizePrediction.click();
+
+    expect(root.innerHTML).toContain(
+      'class="choice-chip selected" data-phenomenon="decolorize" type="button" aria-pressed="true"'
+    );
+
+    sodiumReagent.click();
+
+    expect(root.innerHTML).toContain(
+      'class="choice-chip" data-phenomenon="decolorize" type="button" aria-pressed="false"'
+    );
+
+    decolorizePrediction.click();
+    compoundInput.input.value = 'ethanol';
+    compoundInput.inputEvent();
+
+    expect(root.innerHTML).toContain(
+      'class="choice-chip" data-phenomenon="decolorize" type="button" aria-pressed="false"'
+    );
+
+    decolorizePrediction.click();
+    challengeMode.click();
+
+    expect(root.innerHTML).toContain(
+      'class="choice-chip" data-phenomenon="decolorize" type="button" aria-pressed="false"'
+    );
+  });
+
+  test('compares phenomenon prediction after submitting reagent answer', async () => {
+    const decolorizePrediction = createPhenomenonButton('decolorize');
+    const yesAnswer = createAnswerButton('yes');
+    const submitReagent = createActionButton('submit-reagent');
+    const root = createRoot({
+      phenomenonButtons: [decolorizePrediction.button],
+      answerButtons: [yesAnswer.button],
+      actionButtons: [submitReagent.button]
+    });
+
+    await importApp(root);
+
+    decolorizePrediction.click();
+    yesAnswer.click();
+
+    expect(root.innerHTML).not.toContain('现象预测正确');
+
+    submitReagent.click();
+
+    expect(root.innerHTML).toContain('正确：会反应');
+    expect(root.innerHTML).toContain('现象预测正确：褪色');
+  });
 });
 
 describe('app pair classroom selection', () => {
@@ -231,7 +309,8 @@ describe('app curiosity bar', () => {
   });
 
   test('omits the curiosity bar when no questions are available', async () => {
-    vi.doMock('../src/curiosity', () => ({
+    vi.doMock('../src/curiosity', async () => ({
+      ...(await vi.importActual<typeof import('../src/curiosity')>('../src/curiosity')),
       curiosityQuestions: []
     }));
     const nextQuestionButton = createActionButton('next-curiosity-question');
@@ -316,7 +395,11 @@ async function importApp(root: HTMLDivElement): Promise<void> {
 interface FakeRootOptions {
   modeButtons?: HTMLButtonElement[];
   actionButtons?: HTMLButtonElement[];
+  answerButtons?: HTMLButtonElement[];
   methodNodeButtons?: HTMLButtonElement[];
+  phenomenonButtons?: HTMLButtonElement[];
+  reagentButtons?: HTMLButtonElement[];
+  reagentPracticeModeButtons?: HTMLButtonElement[];
   unsaturationPredictionButtons?: HTMLButtonElement[];
   inputElements?: HTMLInputElement[];
 }
@@ -331,8 +414,20 @@ function createRoot(options: FakeRootOptions = {}): HTMLDivElement {
       if (selector === '[data-action]') {
         return options.actionButtons ?? [];
       }
+      if (selector === '[data-answer]') {
+        return options.answerButtons ?? [];
+      }
       if (selector === '[data-method-node]') {
         return options.methodNodeButtons ?? [];
+      }
+      if (selector === '[data-phenomenon]') {
+        return options.phenomenonButtons ?? [];
+      }
+      if (selector === '[data-reagent]') {
+        return options.reagentButtons ?? [];
+      }
+      if (selector === '[data-reagent-practice-mode]') {
+        return options.reagentPracticeModeButtons ?? [];
       }
       if (selector === '[data-unsaturation-prediction]') {
         return options.unsaturationPredictionButtons ?? [];
@@ -377,6 +472,22 @@ function createActionButton(action: string): {
   };
 }
 
+function createAnswerButton(answer: string): {
+  button: HTMLButtonElement;
+  click: () => void;
+} {
+  let listener: (() => void) | null = null;
+  return {
+    button: {
+      dataset: { answer },
+      addEventListener: vi.fn((eventName: string, callback: () => void) => {
+        if (eventName === 'click') listener = callback;
+      })
+    } as unknown as HTMLButtonElement,
+    click: () => listener?.()
+  };
+}
+
 function createMethodNodeButton(methodNode: string): {
   button: HTMLButtonElement;
   click: () => void;
@@ -385,6 +496,54 @@ function createMethodNodeButton(methodNode: string): {
   return {
     button: {
       dataset: { methodNode },
+      addEventListener: vi.fn((eventName: string, callback: () => void) => {
+        if (eventName === 'click') listener = callback;
+      })
+    } as unknown as HTMLButtonElement,
+    click: () => listener?.()
+  };
+}
+
+function createPhenomenonButton(phenomenon: string): {
+  button: HTMLButtonElement;
+  click: () => void;
+} {
+  let listener: (() => void) | null = null;
+  return {
+    button: {
+      dataset: { phenomenon },
+      addEventListener: vi.fn((eventName: string, callback: () => void) => {
+        if (eventName === 'click') listener = callback;
+      })
+    } as unknown as HTMLButtonElement,
+    click: () => listener?.()
+  };
+}
+
+function createReagentButton(reagent: string): {
+  button: HTMLButtonElement;
+  click: () => void;
+} {
+  let listener: (() => void) | null = null;
+  return {
+    button: {
+      dataset: { reagent },
+      addEventListener: vi.fn((eventName: string, callback: () => void) => {
+        if (eventName === 'click') listener = callback;
+      })
+    } as unknown as HTMLButtonElement,
+    click: () => listener?.()
+  };
+}
+
+function createReagentPracticeModeButton(reagentPracticeMode: string): {
+  button: HTMLButtonElement;
+  click: () => void;
+} {
+  let listener: (() => void) | null = null;
+  return {
+    button: {
+      dataset: { reagentPracticeMode },
       addEventListener: vi.fn((eventName: string, callback: () => void) => {
         if (eventName === 'click') listener = callback;
       })

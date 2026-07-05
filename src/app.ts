@@ -47,8 +47,11 @@ import {
 } from './reagentPractice';
 import {
   curiosityQuestions,
+  getExpectedPhenomenon,
   getUnsaturationPredictionFeedback,
   methodNodeDetails,
+  phenomenonOptions,
+  type PhenomenonId,
   type UnsaturationPredictionId,
   unsaturationPredictionOptions
 } from './curiosity';
@@ -69,6 +72,7 @@ interface AppState {
   reagentId: string;
   reagentAnswer: YesNo;
   reagentFeedback: string;
+  phenomenonPrediction: PhenomenonId | null;
   pairFirstId: string;
   pairSecondId: string;
   pairAnswer: YesNo;
@@ -113,6 +117,7 @@ const state: AppState = {
   reagentId: 'bromine-ccl4',
   reagentAnswer: null,
   reagentFeedback: '',
+  phenomenonPrediction: null,
   pairFirstId: 'ethanol',
   pairSecondId: 'acetic-acid',
   pairAnswer: null,
@@ -588,6 +593,8 @@ function renderReagentMode(): string {
                   .join('')}
               </div>
 
+              ${renderPhenomenonPredictionPanel(challengePassed)}
+
               <div class="answer-row" aria-label="反应判断">
                 <button class="judge-button ${state.reagentAnswer === 'yes' ? 'selected yes' : ''}" data-answer="yes" type="button" aria-pressed="${state.reagentAnswer === 'yes'}" ${challengePassed ? 'disabled' : ''}>
                   会反应
@@ -607,6 +614,31 @@ function renderReagentMode(): string {
         ${feedbackBlock(state.reagentFeedback)}
         ${renderChallengeAdvanceAction()}
       </section>
+    </section>
+  `;
+}
+
+function renderPhenomenonPredictionPanel(disabled: boolean): string {
+  return `
+    <section class="prediction-panel" aria-label="先预测实验现象">
+      <div class="prediction-title-row">
+        <p class="section-kicker">实验现象</p>
+        <h3>先预测现象</h3>
+      </div>
+      <div class="prediction-grid">
+        ${phenomenonOptions
+          .map((option) => {
+            const selected = state.phenomenonPrediction === option.id;
+            const className = selected ? 'choice-chip selected' : 'choice-chip';
+            return `
+              <button class="${className}" data-phenomenon="${option.id}" type="button" aria-pressed="${selected}" ${disabled ? 'disabled' : ''}>
+                <span>${option.label}</span>
+                <small>${option.detail}</small>
+              </button>
+            `;
+          })
+          .join('')}
+      </div>
     </section>
   `;
 }
@@ -1073,12 +1105,29 @@ function bindEvents(): void {
     });
   });
 
+  appRoot.querySelectorAll<HTMLButtonElement>('[data-phenomenon]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const phenomenon = button.dataset.phenomenon;
+      if (!isPhenomenonId(phenomenon)) {
+        return;
+      }
+
+      state.phenomenonPrediction = phenomenon;
+      state.reagentFeedback = '';
+      render();
+    });
+  });
+
   appRoot.querySelectorAll<HTMLButtonElement>('[data-reagent]').forEach((button) => {
     button.addEventListener('click', () => {
       if (state.reagentPracticeMode === 'challenge') {
         return;
       }
-      state.reagentId = button.dataset.reagent ?? state.reagentId;
+      const nextReagentId = button.dataset.reagent ?? state.reagentId;
+      if (nextReagentId !== state.reagentId) {
+        state.phenomenonPrediction = null;
+      }
+      state.reagentId = nextReagentId;
       state.reagentFeedback = '';
       render();
     });
@@ -1117,6 +1166,7 @@ function bindEvents(): void {
         state.reagentId = next.reagentId;
         state.reagentAnswer = next.answer;
         state.reagentFeedback = next.feedback;
+        state.phenomenonPrediction = null;
         render();
         return;
       }
@@ -1191,6 +1241,10 @@ function isUnsaturationPredictionId(value: string | undefined): value is Unsatur
   return value !== undefined && unsaturationPredictionOptions.some((option) => option.id === value);
 }
 
+function isPhenomenonId(value: string | undefined): value is PhenomenonId {
+  return value !== undefined && phenomenonOptions.some((option) => option.id === value);
+}
+
 function toggleUnsaturationPrediction(prediction: UnsaturationPredictionId): void {
   if (prediction === 'none') {
     state.unsaturationPredictions = state.unsaturationPredictions.includes('none') ? [] : ['none'];
@@ -1211,6 +1265,7 @@ function setReagentPracticeMode(mode: ReagentPracticeMode): void {
   state.reagentPracticeMode = mode;
   state.reagentAnswer = null;
   state.reagentFeedback = '';
+  state.phenomenonPrediction = null;
 
   if (mode === 'challenge') {
     if (state.reagentChallengeSession.completed) {
@@ -1230,6 +1285,7 @@ function restartReagentChallenge(): void {
   state.reagentPracticeMode = 'challenge';
   state.reagentChallengeSession = createReagentChallengeSession();
   state.reagentFeedback = '';
+  state.phenomenonPrediction = null;
   applyCurrentChallengeQuestion();
   render();
 }
@@ -1239,12 +1295,14 @@ function advanceReagentChallenge(): void {
 
   if (state.reagentChallengeSession.completed) {
     state.reagentAnswer = null;
+    state.phenomenonPrediction = null;
     state.reagentFeedback = `挑战完成：本轮共 ${state.reagentChallengeSession.questions.length} 关，答对 ${state.reagentChallengeSession.score} 关。`;
     render();
     return;
   }
 
   state.reagentFeedback = '';
+  state.phenomenonPrediction = null;
   applyCurrentChallengeQuestion();
   render();
 }
@@ -1258,6 +1316,7 @@ function applyCurrentChallengeQuestion(): void {
   state.reagentCompoundId = question.compoundId;
   state.reagentId = question.reagentId;
   state.reagentAnswer = null;
+  state.phenomenonPrediction = null;
 }
 
 function newReagentChallenge(): void {
@@ -1266,6 +1325,7 @@ function newReagentChallenge(): void {
   state.reagentId = pick(reagents).id;
   state.reagentAnswer = null;
   state.reagentFeedback = '';
+  state.phenomenonPrediction = null;
   render();
 }
 
@@ -1279,6 +1339,7 @@ function submitReagentAnswer(): void {
   const reaction = getReagentReaction(state.reagentCompoundId, state.reagentId);
   const expected = reaction.reacts ? 'yes' : 'no';
   const isCorrect = state.reagentAnswer === expected;
+  const phenomenonFeedback = getPhenomenonPredictionFeedback(reaction);
 
   if (state.reagentPracticeMode === 'challenge') {
     const evaluated = evaluateChallengeAnswer(state.reagentChallengeSession, isCorrect);
@@ -1288,13 +1349,32 @@ function submitReagentAnswer(): void {
         ? '本关通过，点击“完成挑战”查看结果。'
         : '本关通过，点击“进入下一关”。'
       : '本关还不能通过，请复盘后重新选择。';
-    state.reagentFeedback = `${isCorrect ? '正确' : '需要复盘'}：${reaction.reacts ? '会反应' : '不反应'}。${reaction.reason} 现象：${reaction.evidence}${reaction.equation ? ` 方程式：${reaction.equation}` : ''} ${levelSuffix}`;
+    state.reagentFeedback = `${isCorrect ? '正确' : '需要复盘'}：${reaction.reacts ? '会反应' : '不反应'}。${reaction.reason} ${phenomenonFeedback} 现象：${reaction.evidence}${reaction.equation ? ` 方程式：${reaction.equation}` : ''} ${levelSuffix}`;
     render();
     return;
   }
 
-  state.reagentFeedback = `${isCorrect ? '正确' : '需要复盘'}：${reaction.reacts ? '会反应' : '不反应'}。${reaction.reason} 现象：${reaction.evidence}${reaction.equation ? ` 方程式：${reaction.equation}` : ''}`;
+  state.reagentFeedback = `${isCorrect ? '正确' : '需要复盘'}：${reaction.reacts ? '会反应' : '不反应'}。${reaction.reason} ${phenomenonFeedback} 现象：${reaction.evidence}${reaction.equation ? ` 方程式：${reaction.equation}` : ''}`;
   render();
+}
+
+function getPhenomenonPredictionFeedback(reaction: ReturnType<typeof getReagentReaction>): string {
+  const expectedPhenomenon = getExpectedPhenomenon(reaction);
+  const expectedLabel = phenomenonLabel(expectedPhenomenon);
+
+  if (state.phenomenonPrediction === expectedPhenomenon) {
+    return `现象预测正确：${expectedLabel}。`;
+  }
+
+  if (!state.phenomenonPrediction) {
+    return `现象需要复盘：应观察到${expectedLabel}。`;
+  }
+
+  return `现象需要复盘：你选${phenomenonLabel(state.phenomenonPrediction)}，应观察到${expectedLabel}。`;
+}
+
+function phenomenonLabel(phenomenon: PhenomenonId): string {
+  return phenomenonOptions.find((option) => option.id === phenomenon)?.label ?? '无明显现象';
 }
 
 function newPairChallenge(): void {
