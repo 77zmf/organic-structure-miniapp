@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { resolveInitialProxyUrl } from '../src/proxyConfig';
+import { DEFAULT_DEEPSEEK_PROXY_URL, resolveInitialProxyUrl } from '../src/proxyConfig';
 
 describe('DeepSeek proxy URL resolution', () => {
   test('prefers a safe query parameter and trims it', () => {
@@ -7,7 +7,6 @@ describe('DeepSeek proxy URL resolution', () => {
       resolveInitialProxyUrl({
         hostname: '77zmf.github.io',
         search: '?deepseekProxy=https%3A%2F%2Fchem-ai.example.com%2Fapi%2Fdeepseek',
-        savedProxyUrl: null
       })
     ).toBe('https://chem-ai.example.com/api/deepseek');
   });
@@ -16,8 +15,7 @@ describe('DeepSeek proxy URL resolution', () => {
     expect(
       resolveInitialProxyUrl({
         hostname: '77zmf.github.io',
-        envProxyUrl: 'https://chem-ai.example.com/api/deepseek',
-        savedProxyUrl: null
+        envProxyUrl: 'https://chem-ai.example.com/api/deepseek'
       })
     ).toBe('https://chem-ai.example.com/api/deepseek');
   });
@@ -25,29 +23,34 @@ describe('DeepSeek proxy URL resolution', () => {
   test('falls back to same-origin serverless API outside GitHub Pages and localhost', () => {
     expect(
       resolveInitialProxyUrl({
-        hostname: 'organic-structure-miniapp.vercel.app',
-        savedProxyUrl: null
+        hostname: 'organic-structure-miniapp.vercel.app'
       })
     ).toBe('/api/deepseek');
   });
 
-  test('ignores unsafe proxy URL schemes', () => {
+  test('automatically uses the managed proxy on GitHub Pages', () => {
+    expect(resolveInitialProxyUrl({ hostname: '77zmf.github.io' })).toBe(DEFAULT_DEEPSEEK_PROXY_URL);
+  });
+
+  test('ignores an unsafe query override and uses the managed GitHub Pages proxy', () => {
     expect(
       resolveInitialProxyUrl({
         hostname: '77zmf.github.io',
-        search: '?deepseekProxy=javascript%3Aalert(1)',
-        savedProxyUrl: 'data:text/plain,secret'
+        search: '?deepseekProxy=javascript%3Aalert(1)'
       })
-    ).toBe('');
+    ).toBe(DEFAULT_DEEPSEEK_PROXY_URL);
   });
 
   test('rejects protocol-relative proxy URLs', () => {
     expect(
       resolveInitialProxyUrl({
         hostname: '77zmf.github.io',
-        search: '?proxy=%2F%2Fevil.example.com%2Fapi%2Fdeepseek',
-        savedProxyUrl: null
+        search: '?proxy=%2F%2Fevil.example.com%2Fapi%2Fdeepseek'
       })
-    ).toBe('');
+    ).toBe(DEFAULT_DEEPSEEK_PROXY_URL);
+  });
+
+  test('uses the rule assistant on local development hosts', () => {
+    expect(resolveInitialProxyUrl({ hostname: '127.0.0.1' })).toBe('');
   });
 });

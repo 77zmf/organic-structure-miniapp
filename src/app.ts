@@ -5,6 +5,8 @@ import {
   FlaskConical,
   GitBranch,
   Map as MapIcon,
+  MessageCircleQuestion,
+  NotebookPen,
   RefreshCw,
   Send,
   Shuffle,
@@ -36,7 +38,8 @@ import { getMoleculeModel, type DisplayMode, type MoleculeModel } from './molecu
 import { createMoleculeViewer, type MoleculeViewer } from './moleculeViewer';
 import { createRandomPairQuestion, selectPairCompound, type PairSide } from './pairPractice';
 import { createPuzzleUnlockState, updatePuzzleUnlockWithGuess } from './puzzleUnlock';
-import { normalizeProxyUrl, resolveInitialProxyUrl } from './proxyConfig';
+import { resolveInitialProxyUrl } from './proxyConfig';
+import { createReflectionSummary, type ReflectionSummary } from './reflection';
 import { sanitizeAgentAnswer } from '../shared/deepseekProxy';
 import {
   advanceChallenge,
@@ -109,15 +112,13 @@ interface AppState {
   viewerDisplayMode: DisplayMode;
   highlightFunctionalGroup: boolean;
   proxyUrl: string;
-  toolQaUrl: string;
-  reflectionUrl: string;
+  reflectionSummary: ReflectionSummary | null;
   chatInput: string;
   chatMessages: ChatMessage[];
   structureGuess: string;
   puzzleFeedback: string;
   proxyStatus: string;
   chatPending: boolean;
-  proxyCheckPending: boolean;
   curiosityQuestionIndex: number;
   selectedMethodNodeId: string;
 }
@@ -160,15 +161,13 @@ const state: AppState = {
   viewerDisplayMode: 'ball-stick',
   highlightFunctionalGroup: true,
   proxyUrl: getInitialProxyUrl(),
-  toolQaUrl: getInitialExternalToolUrl('toolQaUrl', import.meta.env.VITE_TOOL_QA_URL),
-  reflectionUrl: getInitialExternalToolUrl('reflectionUrl', import.meta.env.VITE_REFLECTION_URL),
+  reflectionSummary: null,
   chatInput: '',
   chatMessages: [],
   structureGuess: '',
   puzzleFeedback: '',
   proxyStatus: '',
   chatPending: false,
-  proxyCheckPending: false,
   curiosityQuestionIndex: 0,
   selectedMethodNodeId: 'composition'
 };
@@ -226,6 +225,8 @@ function render(): void {
       FlaskConical,
       GitBranch,
       Map: MapIcon,
+      MessageCircleQuestion,
+      NotebookPen,
       RefreshCw,
       Send,
       Shuffle,
@@ -862,13 +863,10 @@ function renderPuzzleChatPanel(): string {
           <p class="section-kicker">AI 推理助手</p>
           <h2>实验性质问答</h2>
         </div>
-        <button class="icon-text-button" data-action="check-proxy" type="button" ${state.proxyCheckPending ? 'disabled' : ''}>
-          ${state.proxyCheckPending ? '检测中' : '测试连接'}
-        </button>
-      </div>
-      <div class="proxy-config-row">
-        <label class="input-label" for="proxy-url">DeepSeek 代理 URL</label>
-        <input id="proxy-url" class="text-input" value="${escapeHtml(state.proxyUrl)}" data-input="proxy-url" placeholder="例如：https://your-app.vercel.app/api/deepseek；留空则使用规则助手" />
+        <span class="assistant-status ${state.chatPending ? 'working' : ''}">
+          <span aria-hidden="true"></span>
+          ${state.chatPending ? '正在推理' : '助手已就绪'}
+        </span>
       </div>
       <p class="proxy-status">${proxyStatusText()}</p>
       <div class="chat-log" aria-live="polite">
@@ -895,45 +893,49 @@ function renderPuzzleChatPanel(): string {
 
 function renderExternalToolsPanel(): string {
   return `
-    <section class="external-tools-panel" aria-label="外部学习工具接口">
+    <section class="external-tools-panel" aria-label="迁移学习工具">
       <div>
         <p class="section-kicker">迁移工具</p>
-        <h2>外部学习接口</h2>
+        <h2>学习闭环</h2>
       </div>
-      ${renderExternalToolRow(
-        '工具性质问答',
-        '连接课堂使用的性质问答工具。',
-        'tool-qa-url',
-        state.toolQaUrl
-      )}
-      ${renderExternalToolRow(
-        '个人反思总结',
-        '连接学习反思与总结页面。',
-        'reflection-url',
-        state.reflectionUrl
-      )}
+      <div class="external-tool-row">
+        <i data-lucide="message-circle-question" aria-hidden="true"></i>
+        <div class="external-tool-copy">
+          <h3>工具性质问答</h3>
+          <p>围绕当前分子式继续收集反应证据。</p>
+        </div>
+        <button class="external-tool-launch" data-action="focus-chat" type="button">开始问答</button>
+      </div>
+      <div class="external-tool-row">
+        <i data-lucide="notebook-pen" aria-hidden="true"></i>
+        <div class="external-tool-copy">
+          <h3>个人反思总结</h3>
+          <p>整理已验证性质、当前判断和下一步实验。</p>
+        </div>
+        <button class="external-tool-launch secondary" data-action="generate-reflection" type="button">
+          ${state.reflectionSummary ? '重新生成' : '生成总结'}
+        </button>
+      </div>
+      ${renderReflectionSummary()}
     </section>
   `;
 }
 
-function renderExternalToolRow(title: string, description: string, inputKind: string, value: string): string {
-  const safeUrl = normalizeProxyUrl(value);
-  const inputId = `${inputKind}-input`;
+function renderReflectionSummary(): string {
+  const summary = state.reflectionSummary;
+  if (!summary) {
+    return '';
+  }
+
   return `
-    <div class="external-tool-row">
-      <div class="external-tool-copy">
-        <h3>${escapeHtml(title)}</h3>
-        <p>${escapeHtml(description)}</p>
-      </div>
-      <label class="input-label" for="${inputId}">${escapeHtml(title)} URL</label>
-      <div class="external-tool-action-row">
-        <input id="${inputId}" class="text-input" value="${escapeHtml(value)}" data-input="${inputKind}" placeholder="https://..." />
-        ${
-          safeUrl
-            ? `<a class="external-tool-launch" href="${escapeHtml(safeUrl)}" target="_blank" rel="noreferrer">打开</a>`
-            : '<button class="external-tool-launch" type="button" disabled>待配置</button>'
-        }
-      </div>
+    <div class="reflection-summary" aria-live="polite">
+      <p class="section-kicker">本轮反思</p>
+      <dl>
+        <div><dt>研究过程</dt><dd>${formatChemistryText(summary.focus)}</dd></div>
+        <div><dt>证据整理</dt><dd>${formatChemistryText(summary.evidence)}</dd></div>
+        <div><dt>当前判断</dt><dd>${formatChemistryText(summary.judgement)}</dd></div>
+        <div><dt>继续验证</dt><dd>${formatChemistryText(summary.nextStep)}</dd></div>
+      </dl>
     </div>
   `;
 }
@@ -1458,24 +1460,9 @@ function bindEvents(): void {
       }
       if (kind === 'pair-type') state.pairTypeGuess = input.value;
       if (kind === 'chat') state.chatInput = input.value;
-      if (kind === 'structure-guess') state.structureGuess = input.value;
-      if (kind === 'proxy-url') {
-        state.proxyUrl = input.value.trim();
-        safeLocalStorageSet('deepseekProxyUrl', state.proxyUrl);
-      }
-      if (kind === 'tool-qa-url') {
-        state.toolQaUrl = input.value.trim();
-        safeLocalStorageSet('toolQaUrl', state.toolQaUrl);
-      }
-      if (kind === 'reflection-url') {
-        state.reflectionUrl = input.value.trim();
-        safeLocalStorageSet('reflectionUrl', state.reflectionUrl);
-      }
-    });
-
-    input.addEventListener('change', () => {
-      if (input.dataset.input === 'tool-qa-url' || input.dataset.input === 'reflection-url') {
-        render();
+      if (kind === 'structure-guess') {
+        state.structureGuess = input.value;
+        state.reflectionSummary = null;
       }
     });
 
@@ -1509,7 +1496,8 @@ function bindEvents(): void {
       if (action === 'random-gaokao-question') randomGaokaoQuestion();
       if (action === 'send-chat') sendChat();
       if (action === 'submit-guess') submitGuess();
-      if (action === 'check-proxy') checkProxyStatus();
+      if (action === 'focus-chat') focusChatInput();
+      if (action === 'generate-reflection') generateReflection();
       if (action === 'next-curiosity-question') nextCuriosityQuestion();
     });
   });
@@ -1831,8 +1819,8 @@ function setPuzzle(puzzle: FormulaPuzzle, selectedGaokaoQuestionId?: string): vo
   state.puzzleFeedback = '';
   state.proxyStatus = '';
   state.chatPending = false;
-  state.proxyCheckPending = false;
   state.chatMessages = [];
+  state.reflectionSummary = null;
 }
 
 async function sendChat(): Promise<void> {
@@ -1850,8 +1838,9 @@ async function sendChat(): Promise<void> {
     { role: 'student', text }
   ];
   state.chatInput = '';
-  state.proxyStatus = proxyUrl ? 'DeepSeek 请求中...' : '';
+  state.proxyStatus = proxyUrl ? '正在连接智能问答服务...' : '规则助手正在推理...';
   state.chatPending = true;
+  state.reflectionSummary = null;
   render();
 
   const answerResult = await getAgentAnswer(puzzleId, proxyUrl, text, history);
@@ -1877,6 +1866,24 @@ function appendEvidenceNote(note: EvidenceNote): void {
   }
 
   state.evidenceNotes = [...state.evidenceNotes, note];
+  state.reflectionSummary = null;
+}
+
+function focusChatInput(): void {
+  const input = appRoot.querySelector?.('[data-input="chat"]') as HTMLInputElement | null | undefined;
+  input?.scrollIntoView?.({ behavior: 'smooth', block: 'center' });
+  input?.focus?.();
+}
+
+function generateReflection(): void {
+  const puzzle = findPuzzleById(state.puzzleId);
+  state.reflectionSummary = createReflectionSummary({
+    formula: puzzle.formula,
+    evidenceNotes: state.evidenceNotes,
+    structureGuess: state.structureGuess,
+    studentQuestionCount: state.chatMessages.filter((message) => message.role === 'student').length
+  });
+  render();
 }
 
 function evidenceNoteKey(note: EvidenceNote): string {
@@ -1954,70 +1961,13 @@ function getInitialProxyUrl(): string {
   return resolveInitialProxyUrl({
     hostname: window.location.hostname,
     search: window.location.search,
-    savedProxyUrl: safeLocalStorageGet('deepseekProxyUrl'),
     envProxyUrl: import.meta.env.VITE_DEEPSEEK_PROXY_URL
   });
 }
 
-function getInitialExternalToolUrl(storageKey: string, envUrl: string | undefined): string {
-  return normalizeProxyUrl(safeLocalStorageGet(storageKey) ?? '') || normalizeProxyUrl(envUrl ?? '');
-}
-
-function safeLocalStorageGet(key: string): string | null {
-  try {
-    return typeof localStorage === 'undefined' ? null : localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function safeLocalStorageSet(key: string, value: string): void {
-  try {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(key, value);
-    }
-  } catch {
-    // Storage can be unavailable in restricted browser contexts; the proxy URL remains in state.
-  }
-}
-
 function proxyStatusText(): string {
-  const mode = state.proxyUrl ? 'DeepSeek 代理已填写；不可用时会自动回退到规则助手。' : '当前使用本地规则助手。部署 Vercel 代理后可填入 /api/deepseek 或完整代理 URL。';
+  const mode = state.proxyUrl ? '智能问答已自动接入，服务异常时会切换为规则助手。' : '规则助手已就绪。';
   return state.proxyStatus ? `${mode} ${escapeHtml(state.proxyStatus)}` : mode;
-}
-
-async function checkProxyStatus(): Promise<void> {
-  if (!state.proxyUrl) {
-    state.proxyStatus = '当前没有代理 URL，会使用本地规则助手。';
-    render();
-    return;
-  }
-
-  state.proxyCheckPending = true;
-  state.proxyStatus = '正在检测 DeepSeek 代理...';
-  render();
-
-  try {
-    const response = await fetch(state.proxyUrl, { method: 'GET' });
-    const data = (await response.json().catch(() => ({}))) as {
-      configured?: boolean;
-      model?: string;
-      error?: string;
-    };
-
-    if (!response.ok) {
-      throw new Error(data.error || `代理返回 ${response.status}`);
-    }
-
-    state.proxyStatus = data.configured
-      ? `代理可用，模型：${data.model || 'DeepSeek'}。`
-      : '代理服务在线，但还没有配置服务端 API Key。';
-  } catch (error) {
-    state.proxyStatus = `代理检测失败：${error instanceof Error ? error.message : '未知错误'}。`;
-  } finally {
-    state.proxyCheckPending = false;
-    render();
-  }
 }
 
 function createAgentAnswerResult(
@@ -2069,7 +2019,7 @@ async function getAgentAnswer(
   } catch (error) {
     const fallback = askAgent(puzzleId, question);
     return createAgentAnswerResult(fallback, {
-      proxyStatus: `代理不可用，已回退到规则助手：${error instanceof Error ? error.message : '未知错误'}`
+      proxyStatus: '智能服务暂时不可用，已切换为规则助手。'
     });
   }
 }

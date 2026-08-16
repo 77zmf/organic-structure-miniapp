@@ -17,6 +17,8 @@ vi.mock('lucide', () => ({
   FlaskConical: {},
   GitBranch: {},
   Map: {},
+  MessageCircleQuestion: {},
+  NotebookPen: {},
   RefreshCw: {},
   Send: {},
   Shuffle: {},

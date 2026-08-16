@@ -1185,9 +1185,17 @@ button.flow-node.final-node {
 
 .external-tool-row {
   display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
   gap: 8px;
+  align-items: center;
   padding-top: 14px;
   border-top: 1px solid var(--line);
+}
+
+.external-tool-row > svg {
+  width: 24px;
+  height: 24px;
+  color: var(--teal-dark);
 }
 
 .external-tool-copy {
@@ -1206,13 +1214,6 @@ button.flow-node.final-node {
   line-height: 1.55;
 }
 
-.external-tool-action-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: center;
-}
-
 .external-tool-launch {
   display: inline-flex;
   align-items: center;
@@ -1229,15 +1230,57 @@ button.flow-node.final-node {
   white-space: nowrap;
 }
 
+.external-tool-launch.secondary {
+  border-color: rgba(19, 123, 114, 0.34);
+  background: var(--teal-soft);
+  color: var(--teal-dark);
+}
+
+.external-tool-launch.secondary:hover {
+  border-color: var(--teal);
+  background: #d8ece8;
+}
+
 .external-tool-launch:hover {
   border-color: var(--teal-dark);
   background: var(--teal-dark);
 }
 
-.external-tool-launch:disabled {
-  border-color: var(--line);
-  background: var(--surface-muted);
-  color: var(--muted);
+.reflection-summary {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.reflection-summary dl {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.reflection-summary dl > div {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(215, 222, 216, 0.7);
+}
+
+.reflection-summary dl > div:last-child {
+  border-bottom: 0;
+}
+
+.reflection-summary dt {
+  color: var(--teal-dark);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.reflection-summary dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .formula-display {
@@ -1553,6 +1596,38 @@ button.flow-node.final-node {
   font-size: 13px;
 }
 
+.assistant-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(19, 123, 114, 0.25);
+  border-radius: 8px;
+  background: var(--teal-soft);
+  color: var(--teal-dark);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.assistant-status > span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--teal);
+}
+
+.assistant-status.working > span {
+  animation: status-pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes status-pulse {
+  to {
+    opacity: 0.35;
+  }
+}
+
 .quick-question {
   min-height: 44px;
   padding: 0 12px;
@@ -1739,10 +1814,23 @@ button.flow-node.final-node {
 
   .inline-form,
   .chat-input-row,
-  .external-tool-action-row,
   .practice-switch,
   .challenge-status {
     grid-template-columns: 1fr;
+  }
+
+  .external-tool-row {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .external-tool-launch {
+    grid-column: 2;
+    width: 100%;
+  }
+
+  .reflection-summary dl > div {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 
   .compound-panel,

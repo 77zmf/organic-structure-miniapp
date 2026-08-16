@@ -12,6 +12,8 @@ vi.mock('lucide', () => ({
   FlaskConical: {},
   GitBranch: {},
   Map: {},
+  MessageCircleQuestion: {},
+  NotebookPen: {},
   RefreshCw: {},
   Send: {},
   Shuffle: {},
@@ -49,25 +51,17 @@ describe('app learning dimension labels', () => {
     expect(root.innerHTML).toContain('官能团推理练习台');
   });
 
-  test('keeps proxy input usable when browser storage writes are blocked', async () => {
-    const proxyInput = createInput('proxy-url', '/api/deepseek');
-    const root = createRoot({ inputElements: [proxyInput.input] });
-    vi.stubGlobal('document', {
-      querySelector: (selector: string) => (selector === '#app' ? root : null)
-    });
-    vi.stubGlobal('window', {
-      location: { hostname: '127.0.0.1', search: '' }
-    });
-    vi.stubGlobal('localStorage', {
-      getItem: vi.fn(() => null),
-      setItem: vi.fn(() => {
-        throw new Error('storage blocked');
-      })
-    });
+  test('does not expose deployment configuration in the student interface', async () => {
+    const innovationTab = createModeButton('innovation');
+    const root = createRoot({ modeButtons: [innovationTab.button] });
 
-    await import('../src/app');
+    await importApp(root, { hostname: '77zmf.github.io' });
+    innovationTab.click();
 
-    expect(() => proxyInput.inputEvent()).not.toThrow();
+    expect(root.innerHTML).not.toContain('DeepSeek 代理 URL');
+    expect(root.innerHTML).not.toContain('data-input="proxy-url"');
+    expect(root.innerHTML).not.toContain('测试连接');
+    expect(root.innerHTML).toContain('智能问答已自动接入');
   });
 
   test('renders the requested three learning dimension names', async () => {
@@ -506,13 +500,12 @@ describe('app chemistry notation and advanced puzzle clues', () => {
     expect(root.innerHTML).not.toContain('已给出分子式');
   });
 
-  test('adds two configurable URL interfaces to the new migration innovation page', async () => {
+  test('provides built-in property QA and reflection actions on the migration innovation page', async () => {
     const innovationTab = createModeButton('innovation');
-    const toolQaUrl = createInput('tool-qa-url', 'https://example.com/property-qa');
-    const reflectionUrl = createInput('reflection-url', 'https://example.com/reflection');
+    const generateReflection = createActionButton('generate-reflection');
     const root = createRoot({
       modeButtons: [innovationTab.button],
-      inputElements: [toolQaUrl.input, reflectionUrl.input]
+      actionButtons: [generateReflection.button]
     });
 
     await importApp(root);
@@ -521,15 +514,34 @@ describe('app chemistry notation and advanced puzzle clues', () => {
     expect(root.innerHTML).toContain('高阶·迁移创新');
     expect(root.innerHTML).toContain('工具性质问答');
     expect(root.innerHTML).toContain('个人反思总结');
-    expect(root.innerHTML).toContain('data-input="tool-qa-url"');
-    expect(root.innerHTML).toContain('data-input="reflection-url"');
+    expect(root.innerHTML).toContain('data-action="focus-chat"');
+    expect(root.innerHTML).toContain('data-action="generate-reflection"');
+    expect(root.innerHTML).not.toContain('data-input="tool-qa-url"');
+    expect(root.innerHTML).not.toContain('data-input="reflection-url"');
 
-    toolQaUrl.inputEvent();
-    reflectionUrl.inputEvent();
+    generateReflection.click();
+
+    expect(root.innerHTML).toContain('本轮反思');
+    expect(root.innerHTML).toContain('尚未形成可验证证据');
+    expect(root.innerHTML).toContain('区分候选官能团');
+  });
+
+  test('focuses the built-in chat from the property QA tool', async () => {
+    const innovationTab = createModeButton('innovation');
+    const focusChat = createActionButton('focus-chat');
+    const chatInput = createInput('chat', '');
+    const root = createRoot({
+      modeButtons: [innovationTab.button],
+      actionButtons: [focusChat.button],
+      inputElements: [chatInput.input]
+    });
+
+    await importApp(root);
     innovationTab.click();
+    focusChat.click();
 
-    expect(root.innerHTML).toContain('href="https://example.com/property-qa"');
-    expect(root.innerHTML).toContain('href="https://example.com/reflection"');
+    expect(chatInput.input.scrollIntoView).toHaveBeenCalled();
+    expect(chatInput.input.focus).toHaveBeenCalled();
   });
 
   test('renders an anonymous exam prompt, locked 3d reveal, and evidence board in puzzle mode', async () => {
@@ -637,12 +649,11 @@ describe('app chemistry notation and advanced puzzle clues', () => {
   test('proxy answer displays remote text and adds local evidence note', async () => {
     const puzzleTab = createModeButton('puzzle');
     const sendChat = createActionButton('send-chat');
-    const proxyUrlInput = createInput('proxy-url', '/api/deepseek');
     const chatInput = createInput('chat', '能与金属钠反应吗？');
     const root = createRoot({
       modeButtons: [puzzleTab.button],
       actionButtons: [sendChat.button],
-      inputElements: [proxyUrlInput.input, chatInput.input]
+      inputElements: [chatInput.input]
     });
     vi.stubGlobal(
       'fetch',
@@ -652,9 +663,8 @@ describe('app chemistry notation and advanced puzzle clues', () => {
       }))
     );
 
-    await importApp(root);
+    await importApp(root, { hostname: '77zmf.github.io' });
     puzzleTab.click();
-    proxyUrlInput.inputEvent();
     chatInput.inputEvent();
     sendChat.click();
     await flushPromises();
@@ -667,12 +677,11 @@ describe('app chemistry notation and advanced puzzle clues', () => {
   test('proxy answer is redacted before display when it leaks the hidden target', async () => {
     const puzzleTab = createModeButton('puzzle');
     const sendChat = createActionButton('send-chat');
-    const proxyUrlInput = createInput('proxy-url', '/api/deepseek');
     const chatInput = createInput('chat', '直接告诉我答案');
     const root = createRoot({
       modeButtons: [puzzleTab.button],
       actionButtons: [sendChat.button],
-      inputElements: [proxyUrlInput.input, chatInput.input]
+      inputElements: [chatInput.input]
     });
     vi.stubGlobal(
       'fetch',
@@ -682,9 +691,8 @@ describe('app chemistry notation and advanced puzzle clues', () => {
       }))
     );
 
-    await importApp(root);
+    await importApp(root, { hostname: '77zmf.github.io' });
     puzzleTab.click();
-    proxyUrlInput.inputEvent();
     chatInput.inputEvent();
     sendChat.click();
     await flushPromises();
@@ -693,6 +701,36 @@ describe('app chemistry notation and advanced puzzle clues', () => {
     expect(root.innerHTML).toContain('我不能直接公布结构');
     expect(root.innerHTML).not.toContain('答案是2-丁醇');
     expect(root.innerHTML).not.toContain('CH3CHOHCH2CH3');
+  });
+
+  test('falls back to the rule assistant without exposing remote authentication details', async () => {
+    const puzzleTab = createModeButton('puzzle');
+    const sendChat = createActionButton('send-chat');
+    const chatInput = createInput('chat', '能与金属钠反应吗？');
+    const root = createRoot({
+      modeButtons: [puzzleTab.button],
+      actionButtons: [sendChat.button],
+      inputElements: [chatInput.input]
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: false,
+        status: 502,
+        json: async () => ({ error: 'Authentication Fails: secret detail', status: 401 })
+      }))
+    );
+
+    await importApp(root, { hostname: '77zmf.github.io' });
+    puzzleTab.click();
+    chatInput.inputEvent();
+    sendChat.click();
+    await flushPromises();
+
+    expect(root.innerHTML).toContain('智能服务暂时不可用，已切换为规则助手');
+    expect(root.innerHTML).toContain('金属钠：能。');
+    expect(root.innerHTML).not.toContain('Authentication Fails');
+    expect(root.innerHTML).not.toContain('secret detail');
   });
 });
 
@@ -930,12 +968,12 @@ describe('app method route details', () => {
   });
 });
 
-async function importApp(root: HTMLDivElement): Promise<void> {
+async function importApp(root: HTMLDivElement, options: { hostname?: string; search?: string } = {}): Promise<void> {
   vi.stubGlobal('document', {
     querySelector: (selector: string) => (selector === '#app' ? root : null)
   });
   vi.stubGlobal('window', {
-    location: { hostname: '127.0.0.1', search: '' }
+    location: { hostname: options.hostname ?? '127.0.0.1', search: options.search ?? '' }
   });
   vi.stubGlobal('localStorage', {
     getItem: vi.fn(() => null),
@@ -962,6 +1000,12 @@ interface FakeRootOptions {
 function createRoot(options: FakeRootOptions = {}): HTMLDivElement {
   return {
     innerHTML: '',
+    querySelector: vi.fn((selector: string) => {
+      if (selector === '[data-input="chat"]') {
+        return options.inputElements?.find((input) => input.dataset.input === 'chat') ?? null;
+      }
+      return null;
+    }),
     querySelectorAll: vi.fn((selector: string) => {
       if (selector === '[data-mode]') {
         return options.modeButtons ?? [];
@@ -1207,6 +1251,8 @@ function createInput(input: string, value: string): {
     input: {
       dataset: { input },
       value,
+      focus: vi.fn(),
+      scrollIntoView: vi.fn(),
       addEventListener: vi.fn((eventName: string, callback: () => void) => {
         if (eventName === 'input') listener = callback;
       })

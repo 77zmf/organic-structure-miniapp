@@ -1,9 +1,10 @@
 export interface ProxyUrlInput {
   hostname: string;
   search?: string;
-  savedProxyUrl?: string | null;
   envProxyUrl?: string;
 }
+
+export const DEFAULT_DEEPSEEK_PROXY_URL = 'https://organic-structure-miniapp.vercel.app/api/deepseek';
 
 export function resolveInitialProxyUrl(input: ProxyUrlInput): string {
   const queryProxy = getQueryProxyUrl(input.search ?? '');
@@ -12,10 +13,11 @@ export function resolveInitialProxyUrl(input: ProxyUrlInput): string {
   const envProxyUrl = normalizeProxyUrl(input.envProxyUrl ?? '');
   if (envProxyUrl) return envProxyUrl;
 
-  const savedProxyUrl = normalizeProxyUrl(input.savedProxyUrl ?? '');
-  if (savedProxyUrl) return savedProxyUrl;
+  if (input.hostname.endsWith('github.io')) {
+    return DEFAULT_DEEPSEEK_PROXY_URL;
+  }
 
-  if (isStaticOrLocalHost(input.hostname)) {
+  if (isLocalHost(input.hostname)) {
     return '';
   }
 
@@ -40,6 +42,6 @@ function getQueryProxyUrl(search: string): string {
   return normalizeProxyUrl(params.get('deepseekProxy') ?? params.get('proxy') ?? '');
 }
 
-function isStaticOrLocalHost(hostname: string): boolean {
-  return hostname.endsWith('github.io') || hostname === 'localhost' || hostname === '127.0.0.1';
+function isLocalHost(hostname: string): boolean {
+  return hostname === 'localhost' || hostname === '127.0.0.1';
 }
