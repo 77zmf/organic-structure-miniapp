@@ -80,13 +80,15 @@ describe('app learning dimension labels', () => {
     expect(root.innerHTML).toContain('高阶·迁移创新');
   });
 
-  test('renames the unsaturation tab to unsaturation index', async () => {
+  test('keeps unsaturation inside method instead of a standalone top-level tab', async () => {
     const root = createRoot();
 
     await importApp(root);
 
-    expect(root.innerHTML).toContain('<span>不饱和度</span>');
-    expect(root.innerHTML).not.toContain('<span>不饱和</span>');
+    const topLevelNavigation = root.innerHTML.match(/<nav class="mode-tabs"[\s\S]*?<\/nav>/)?.[0] ?? '';
+    expect(topLevelNavigation).toContain('data-mode="method"');
+    expect(topLevelNavigation).not.toContain('data-mode="unsaturation"');
+    expect(topLevelNavigation).not.toContain('<small>');
   });
 });
 
@@ -109,6 +111,24 @@ describe('app reagent practice modes', () => {
 
     expect(root.innerHTML).not.toContain('class="compound-summary"');
     expect(root.innerHTML).not.toContain('含有羧基，具有酸性');
+  });
+
+  test('keeps reagent and organic-pair activities under basic learning without small helper copy', async () => {
+    const pairActivity = createModeButton('pair');
+    const root = createRoot({ modeButtons: [pairActivity.button] });
+
+    await importApp(root);
+
+    expect(root.innerHTML).toContain('class="learning-activity-switch"');
+    expect(root.innerHTML).toContain('试剂反应');
+    expect(root.innerHTML).toContain('有机物间反应');
+    expect(root.innerHTML).not.toContain('<small>');
+
+    pairActivity.click();
+
+    expect(root.innerHTML).toContain('基础·学习理解');
+    expect(root.innerHTML).toContain('data-action="submit-pair"');
+    expect(root.innerHTML).not.toContain('<small>');
   });
 
   test('renders phenomenon prediction choices before reagent submission', async () => {
@@ -477,12 +497,39 @@ describe('app chemistry notation and advanced puzzle clues', () => {
     await importApp(root);
     puzzleTab.click();
 
+    expect(root.innerHTML).toContain('进阶·应用实践');
     expect(root.innerHTML).toContain('C<sub>4</sub>H<sub>10</sub>O');
     expect(root.innerHTML).toContain('结构猜测');
     expect(root.innerHTML).not.toContain('教材微项目给出');
     expect(root.innerHTML).not.toContain('quick-question');
     expect(root.innerHTML).not.toContain('教材谱图线索');
     expect(root.innerHTML).not.toContain('已给出分子式');
+  });
+
+  test('adds two configurable URL interfaces to the new migration innovation page', async () => {
+    const innovationTab = createModeButton('innovation');
+    const toolQaUrl = createInput('tool-qa-url', 'https://example.com/property-qa');
+    const reflectionUrl = createInput('reflection-url', 'https://example.com/reflection');
+    const root = createRoot({
+      modeButtons: [innovationTab.button],
+      inputElements: [toolQaUrl.input, reflectionUrl.input]
+    });
+
+    await importApp(root);
+    innovationTab.click();
+
+    expect(root.innerHTML).toContain('高阶·迁移创新');
+    expect(root.innerHTML).toContain('工具性质问答');
+    expect(root.innerHTML).toContain('个人反思总结');
+    expect(root.innerHTML).toContain('data-input="tool-qa-url"');
+    expect(root.innerHTML).toContain('data-input="reflection-url"');
+
+    toolQaUrl.inputEvent();
+    reflectionUrl.inputEvent();
+    innovationTab.click();
+
+    expect(root.innerHTML).toContain('href="https://example.com/property-qa"');
+    expect(root.innerHTML).toContain('href="https://example.com/reflection"');
   });
 
   test('renders an anonymous exam prompt, locked 3d reveal, and evidence board in puzzle mode', async () => {
@@ -650,13 +697,14 @@ describe('app chemistry notation and advanced puzzle clues', () => {
 });
 
 describe('app method and unsaturation pages', () => {
-  test('renders a standalone unsaturation index page', async () => {
-    const unsaturationTab = createModeButton('unsaturation');
-    const root = createRoot({ modeButtons: [unsaturationTab.button] });
+  test('renders the complete unsaturation section below the method guide', async () => {
+    const methodTab = createModeButton('method');
+    const root = createRoot({ modeButtons: [methodTab.button] });
 
     await importApp(root);
-    unsaturationTab.click();
+    methodTab.click();
 
+    expect(root.innerHTML).toContain('破案路线图');
     expect(root.innerHTML).toContain('不饱和度计算');
     expect(root.innerHTML).toContain('计算方法');
     expect(root.innerHTML).toContain('Na 等一价金属');
@@ -666,11 +714,11 @@ describe('app method and unsaturation pages', () => {
   });
 
   test('renders unsaturation prediction controls before feedback', async () => {
-    const unsaturationTab = createModeButton('unsaturation');
-    const root = createRoot({ modeButtons: [unsaturationTab.button] });
+    const methodTab = createModeButton('method');
+    const root = createRoot({ modeButtons: [methodTab.button] });
 
     await importApp(root);
-    unsaturationTab.click();
+    methodTab.click();
 
     expect(root.innerHTML).toContain('先猜结构可能性');
     expect(root.innerHTML).toContain('data-unsaturation-prediction="benzene-ring"');
@@ -679,15 +727,15 @@ describe('app method and unsaturation pages', () => {
   });
 
   test('toggles unsaturation prediction selection and feedback', async () => {
-    const unsaturationTab = createModeButton('unsaturation');
+    const methodTab = createModeButton('method');
     const benzenePrediction = createUnsaturationPredictionButton('benzene-ring');
     const root = createRoot({
-      modeButtons: [unsaturationTab.button],
+      modeButtons: [methodTab.button],
       unsaturationPredictionButtons: [benzenePrediction.button]
     });
 
     await importApp(root);
-    unsaturationTab.click();
+    methodTab.click();
 
     expect(root.innerHTML).toContain(
       'class="choice-chip selected" data-unsaturation-prediction="benzene-ring" type="button" aria-pressed="true"'
@@ -702,15 +750,15 @@ describe('app method and unsaturation pages', () => {
   });
 
   test('resets unsaturation predictions when the formula changes', async () => {
-    const unsaturationTab = createModeButton('unsaturation');
+    const methodTab = createModeButton('method');
     const formulaInput = createInput('unsaturation-formula', 'C2H4');
     const root = createRoot({
-      modeButtons: [unsaturationTab.button],
+      modeButtons: [methodTab.button],
       inputElements: [formulaInput.input]
     });
 
     await importApp(root);
-    unsaturationTab.click();
+    methodTab.click();
 
     expect(root.innerHTML).toContain('仍需实验验证');
 
@@ -724,16 +772,16 @@ describe('app method and unsaturation pages', () => {
   });
 
   test('selecting none clears structural unsaturation predictions', async () => {
-    const unsaturationTab = createModeButton('unsaturation');
+    const methodTab = createModeButton('method');
     const benzenePrediction = createUnsaturationPredictionButton('benzene-ring');
     const nonePrediction = createUnsaturationPredictionButton('none');
     const root = createRoot({
-      modeButtons: [unsaturationTab.button],
+      modeButtons: [methodTab.button],
       unsaturationPredictionButtons: [benzenePrediction.button, nonePrediction.button]
     });
 
     await importApp(root);
-    unsaturationTab.click();
+    methodTab.click();
 
     nonePrediction.click();
 
@@ -746,16 +794,16 @@ describe('app method and unsaturation pages', () => {
   });
 
   test('selecting a structural prediction clears none', async () => {
-    const unsaturationTab = createModeButton('unsaturation');
+    const methodTab = createModeButton('method');
     const nonePrediction = createUnsaturationPredictionButton('none');
     const carbonylPrediction = createUnsaturationPredictionButton('carbonyl');
     const root = createRoot({
-      modeButtons: [unsaturationTab.button],
+      modeButtons: [methodTab.button],
       unsaturationPredictionButtons: [nonePrediction.button, carbonylPrediction.button]
     });
 
     await importApp(root);
-    unsaturationTab.click();
+    methodTab.click();
 
     nonePrediction.click();
     carbonylPrediction.click();
@@ -780,7 +828,7 @@ describe('app method and unsaturation pages', () => {
     expect(root.innerHTML).toContain('元素组成');
     expect(root.innerHTML).toContain('相对分子质量');
     expect(root.innerHTML).toContain('官能团及碳骨架状况');
-    expect(root.innerHTML).not.toContain('计算不饱和度');
+    expect(root.innerHTML).toContain('不饱和度计算');
     expect(root.innerHTML).not.toContain('data-method-node="unsaturation"');
     expect(root.innerHTML).toContain('class="flow-tag formula-route-middle-tag">化学性质实验或仪器分析图谱</span>');
     expect(root.innerHTML.indexOf('formula-route-middle-tag')).toBeLessThan(root.innerHTML.indexOf('class="formula-branches"'));
@@ -877,7 +925,7 @@ describe('app method route details', () => {
 
     unknownNode.click();
 
-    expect(root.innerHTML).not.toContain('计算不饱和度');
+    expect(root.innerHTML).toContain('不饱和度计算');
     expect(root.innerHTML).toContain('元素组成');
   });
 });

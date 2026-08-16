@@ -4,9 +4,10 @@
 
 ## 功能
 
-- 基础：随机有机物与常见试剂反应判断。
-- 进阶：两种有机物之间的反应可行性判断。
-- 高阶：只给分子式，通过规则型 AI 推理助手问答来推断结构。
+- 方法：结构测定路线图与不饱和度计算。
+- 基础·学习理解：在同一页面切换试剂反应判断和有机物间反应判断。
+- 进阶·应用实践：只给分子式，通过规则型 AI 或 DeepSeek 推理助手问答来推断结构。
+- 高阶·迁移创新：保留分子式推理工作台，并接入“工具性质问答”和“个人反思总结”两个外部学习接口。
 
 ## 本地运行
 
@@ -42,6 +43,17 @@ npm run build
    - `DEEPSEEK_MODEL`: 可选，默认 `deepseek-v4-flash`
    - `ALLOWED_ORIGINS`: 可选，默认允许 `https://77zmf.github.io`、`http://localhost:5173`、`http://127.0.0.1:5173`
 3. 部署后得到类似 `https://your-app.vercel.app/api/deepseek` 的代理地址。
-4. 打开 GitHub Pages 页面，在高阶模式的“DeepSeek 代理 URL”输入框填入代理地址。
+4. 打开 GitHub Pages 页面，在应用实践或迁移创新页面的“DeepSeek 代理 URL”输入框填入代理地址。
 
 如果网页和 API 都部署在同一个 Vercel 项目，代理 URL 可填 `/api/deepseek`。
+
+## 外部学习接口
+
+迁移创新页面右侧支持两个外部 URL。可以直接在页面输入，失焦后自动保存到当前浏览器并启用“打开”按钮；也可以在构建环境中预设：
+
+```bash
+VITE_TOOL_QA_URL=https://example.com/property-qa
+VITE_REFLECTION_URL=https://example.com/reflection
+```
+
+接口只接受站内相对路径或 `http/https` 地址。这两个 URL 会进入前端静态资源，不要在其中放置密钥或其他敏感参数。

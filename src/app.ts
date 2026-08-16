@@ -1,7 +1,6 @@
 import {
   Beaker,
   Brain,
-  Calculator,
   CheckCircle2,
   FlaskConical,
   GitBranch,
@@ -37,7 +36,7 @@ import { getMoleculeModel, type DisplayMode, type MoleculeModel } from './molecu
 import { createMoleculeViewer, type MoleculeViewer } from './moleculeViewer';
 import { createRandomPairQuestion, selectPairCompound, type PairSide } from './pairPractice';
 import { createPuzzleUnlockState, updatePuzzleUnlockWithGuess } from './puzzleUnlock';
-import { resolveInitialProxyUrl } from './proxyConfig';
+import { normalizeProxyUrl, resolveInitialProxyUrl } from './proxyConfig';
 import { sanitizeAgentAnswer } from '../shared/deepseekProxy';
 import {
   advanceChallenge,
@@ -65,7 +64,7 @@ import {
   type EvidenceNote
 } from './curiosity';
 
-type Mode = 'method' | 'unsaturation' | 'reagent' | 'pair' | 'puzzle';
+type Mode = 'method' | 'reagent' | 'pair' | 'puzzle' | 'innovation';
 type YesNo = 'yes' | 'no' | null;
 type PairRoleSide = 'left' | 'right';
 
@@ -110,6 +109,8 @@ interface AppState {
   viewerDisplayMode: DisplayMode;
   highlightFunctionalGroup: boolean;
   proxyUrl: string;
+  toolQaUrl: string;
+  reflectionUrl: string;
   chatInput: string;
   chatMessages: ChatMessage[];
   structureGuess: string;
@@ -159,6 +160,8 @@ const state: AppState = {
   viewerDisplayMode: 'ball-stick',
   highlightFunctionalGroup: true,
   proxyUrl: getInitialProxyUrl(),
+  toolQaUrl: getInitialExternalToolUrl('toolQaUrl', import.meta.env.VITE_TOOL_QA_URL),
+  reflectionUrl: getInitialExternalToolUrl('reflectionUrl', import.meta.env.VITE_REFLECTION_URL),
   chatInput: '',
   chatMessages: [],
   structureGuess: '',
@@ -197,22 +200,20 @@ function render(): void {
       </header>
 
       <nav class="mode-tabs" aria-label="学习模式">
-        ${modeButton('method', '方法', '结构测定路径', 'map')}
-        ${modeButton('unsaturation', '不饱和度', '公式计算', 'calculator')}
-        ${modeButton('reagent', '基础·学习理解', '试剂反应', 'beaker')}
-        ${modeButton('pair', '进阶·应用实践', '有机物间反应', 'flask-conical')}
-        ${modeButton('puzzle', '高阶·迁移创新', '分子式推理', 'brain')}
+        ${modeButton('method', '方法', 'map')}
+        ${modeButton('reagent', '基础·学习理解', 'beaker', ['pair'])}
+        ${modeButton('puzzle', '进阶·应用实践', 'flask-conical')}
+        ${modeButton('innovation', '高阶·迁移创新', 'brain')}
       </nav>
 
       ${renderCuriosityBar()}
 
-      ${state.mode === 'method' || state.mode === 'unsaturation' ? '' : renderViewerControls()}
+      ${state.mode === 'method' ? '' : renderViewerControls()}
 
       ${state.mode === 'method' ? renderMethodMode() : ''}
-      ${state.mode === 'unsaturation' ? renderUnsaturationMode() : ''}
-      ${state.mode === 'reagent' ? renderReagentMode() : ''}
-      ${state.mode === 'pair' ? renderPairMode() : ''}
+      ${state.mode === 'reagent' || state.mode === 'pair' ? renderLearningMode() : ''}
       ${state.mode === 'puzzle' ? renderPuzzleMode() : ''}
+      ${state.mode === 'innovation' ? renderInnovationMode() : ''}
     </main>
   `;
 
@@ -221,7 +222,6 @@ function render(): void {
     icons: {
       Beaker,
       Brain,
-      Calculator,
       CheckCircle2,
       FlaskConical,
       GitBranch,
@@ -236,14 +236,13 @@ function render(): void {
   mountMoleculeViewers();
 }
 
-function modeButton(mode: Mode, label: string, detail: string, icon: string): string {
-  const isActive = state.mode === mode;
+function modeButton(mode: Mode, label: string, icon: string, groupedModes: Mode[] = []): string {
+  const isActive = state.mode === mode || groupedModes.includes(state.mode);
   const active = isActive ? 'active' : '';
   return `
     <button class="mode-tab ${active}" data-mode="${mode}" type="button" aria-pressed="${isActive}">
       <i data-lucide="${icon}" aria-hidden="true"></i>
       <span>${label}</span>
-      <small>${detail}</small>
     </button>
   `;
 }
@@ -357,6 +356,7 @@ function renderMethodMode(): string {
         </div>
         ${renderMethodDetailPanel()}
       </section>
+      ${renderUnsaturationPanel()}
     </section>
   `;
 }
@@ -393,15 +393,14 @@ function renderMethodDetailPanel(): string {
   `;
 }
 
-function renderUnsaturationMode(): string {
+function renderUnsaturationPanel(): string {
   const formula = state.unsaturationFormula;
   const index = calculateUnsaturationIndex(formula);
   const formattedFormula = formatChemicalFormula(formula);
   const relatedCompounds = compounds.filter((compound) => compound.formula === formula);
 
   return `
-    <section class="workspace unsaturation-layout" aria-label="不饱和度计算">
-      <section class="unsaturation-panel">
+    <section class="unsaturation-panel" aria-label="不饱和度计算">
         <div class="panel-title-row">
           <div>
             <p class="section-kicker">不饱和度</p>
@@ -465,7 +464,6 @@ function renderUnsaturationMode(): string {
             `
             : ''
         }
-      </section>
     </section>
   `;
 }
@@ -599,6 +597,27 @@ function renderMoleculeViewerFallback(container: HTMLElement): void {
   `;
 }
 
+function renderLearningMode(): string {
+  return `
+    <section class="learning-mode" aria-label="基础学习理解">
+      <nav class="learning-activity-switch" aria-label="学习理解活动">
+        ${learningActivityButton('reagent', '试剂反应')}
+        ${learningActivityButton('pair', '有机物间反应')}
+      </nav>
+      ${state.mode === 'pair' ? renderPairMode() : renderReagentMode()}
+    </section>
+  `;
+}
+
+function learningActivityButton(mode: 'reagent' | 'pair', label: string): string {
+  const active = state.mode === mode;
+  return `
+    <button class="learning-activity-button ${active ? 'active' : ''}" data-mode="${mode}" type="button" aria-pressed="${active}">
+      ${label}
+    </button>
+  `;
+}
+
 function renderReagentMode(): string {
   const compound = findCompoundById(state.reagentCompoundId);
   const reagent = findReagentById(state.reagentId);
@@ -634,7 +653,6 @@ function renderReagentMode(): string {
                     (item) => `
                       <button class="choice-chip ${item.id === state.reagentId ? 'selected' : ''}" data-reagent="${item.id}" type="button" aria-pressed="${item.id === state.reagentId}" ${isChallenge ? 'disabled' : ''}>
                         <span>${item.name}</span>
-                        <small>${item.prompt}</small>
                       </button>
                     `
                   )
@@ -681,7 +699,6 @@ function renderPhenomenonPredictionPanel(disabled: boolean): string {
             return `
               <button class="${className}" data-phenomenon="${option.id}" type="button" aria-pressed="${selected}" ${disabled ? 'disabled' : ''}>
                 <span>${option.label}</span>
-                <small>${option.detail}</small>
               </button>
             `;
           })
@@ -696,7 +713,7 @@ function renderPairMode(): string {
   const second = findCompoundById(state.pairSecondId);
 
   return `
-    <section class="workspace two-column pair-layout" aria-label="进阶应用实践有机物间反应判断">
+    <section class="workspace two-column pair-layout" aria-label="基础学习理解有机物间反应判断">
       <section class="compound-pair">
         ${renderSelectablePairCompound(first, 'first', '选择左侧分子')}
         <div class="reaction-mark">+</div>
@@ -706,7 +723,7 @@ function renderPairMode(): string {
       <section class="task-panel">
         <div class="panel-title-row">
           <div>
-            <p class="section-kicker">进阶·应用实践</p>
+            <p class="section-kicker">基础·学习理解</p>
             <h2>${first.name} 与 ${second.name}</h2>
           </div>
           <button class="icon-text-button" data-action="new-pair" type="button">
@@ -767,7 +784,6 @@ function renderPairRoleGroup(side: PairRoleSide, label: string): string {
             return `
               <button class="${className}" data-pair-role="${side}:${option.id}" type="button" aria-pressed="${selected}">
                 <span>${escapeHtml(option.label)}</span>
-                <small>${escapeHtml(option.detail)}</small>
               </button>
             `;
           })
@@ -778,16 +794,24 @@ function renderPairRoleGroup(side: PairRoleSide, label: string): string {
 }
 
 function renderPuzzleMode(): string {
+  return renderPuzzleWorkspace('进阶·应用实践', false);
+}
+
+function renderInnovationMode(): string {
+  return renderPuzzleWorkspace('高阶·迁移创新', true);
+}
+
+function renderPuzzleWorkspace(levelLabel: string, showExternalTools: boolean): string {
   const puzzle = findPuzzleById(state.puzzleId);
   const gaokaoQuestion = getSelectedGaokaoQuestion();
   const formattedFormula = formatChemicalFormula(puzzle.formula);
 
   return `
-    <section class="workspace puzzle-layout" aria-label="高阶迁移创新分子式结构推理">
+    <section class="workspace puzzle-layout" aria-label="${levelLabel}分子式结构推理">
       <section class="formula-panel">
         <div class="panel-title-row">
           <div>
-            <p class="section-kicker">高阶·迁移创新</p>
+            <p class="section-kicker">${levelLabel}</p>
             <h2>分子式 <span class="chem-formula">${formattedFormula}</span></h2>
           </div>
           <button class="icon-text-button" data-action="new-puzzle" type="button">
@@ -811,41 +835,106 @@ function renderPuzzleMode(): string {
         ${feedbackBlock(state.puzzleFeedback)}
       </section>
 
-      <section class="chat-panel">
-        <div class="panel-title-row">
-          <div>
-            <p class="section-kicker">AI 推理助手</p>
-            <h2>实验性质问答</h2>
-          </div>
-          <button class="icon-text-button" data-action="check-proxy" type="button" ${state.proxyCheckPending ? 'disabled' : ''}>
-            ${state.proxyCheckPending ? '检测中' : '测试连接'}
-          </button>
-        </div>
-        <div class="proxy-config-row">
-          <label class="input-label" for="proxy-url">DeepSeek 代理 URL</label>
-          <input id="proxy-url" class="text-input" value="${escapeHtml(state.proxyUrl)}" data-input="proxy-url" placeholder="例如：https://your-app.vercel.app/api/deepseek；留空则使用规则助手" />
-        </div>
-        <p class="proxy-status">${proxyStatusText()}</p>
-        <div class="chat-log" aria-live="polite">
-          ${state.chatMessages
-            .map(
-              (message) => `
-                <div class="chat-message ${message.role}">
-                  <span>${message.role === 'agent' ? 'AI' : '我'}</span>
-                  <p>${formatChemistryText(message.text)}</p>
-                </div>
-              `
-            )
-            .join('')}
-        </div>
-        <div class="chat-input-row">
-          <input class="text-input" value="${escapeHtml(state.chatInput)}" data-input="chat" placeholder="输入一个实验性质问题" ${state.chatPending ? 'disabled' : ''} />
-          <button class="send-button" data-action="send-chat" type="button" aria-label="发送问题" ${state.chatPending ? 'disabled' : ''}>
-            <i data-lucide="send" aria-hidden="true"></i>
-          </button>
-        </div>
-      </section>
+      ${renderPuzzleSupportColumn(showExternalTools)}
     </section>
+  `;
+}
+
+function renderPuzzleSupportColumn(showExternalTools: boolean): string {
+  const chatPanel = renderPuzzleChatPanel();
+  if (!showExternalTools) {
+    return chatPanel;
+  }
+
+  return `
+    <aside class="innovation-sidebar" aria-label="迁移创新工具">
+      ${renderExternalToolsPanel()}
+      ${chatPanel}
+    </aside>
+  `;
+}
+
+function renderPuzzleChatPanel(): string {
+  return `
+    <section class="chat-panel">
+      <div class="panel-title-row">
+        <div>
+          <p class="section-kicker">AI 推理助手</p>
+          <h2>实验性质问答</h2>
+        </div>
+        <button class="icon-text-button" data-action="check-proxy" type="button" ${state.proxyCheckPending ? 'disabled' : ''}>
+          ${state.proxyCheckPending ? '检测中' : '测试连接'}
+        </button>
+      </div>
+      <div class="proxy-config-row">
+        <label class="input-label" for="proxy-url">DeepSeek 代理 URL</label>
+        <input id="proxy-url" class="text-input" value="${escapeHtml(state.proxyUrl)}" data-input="proxy-url" placeholder="例如：https://your-app.vercel.app/api/deepseek；留空则使用规则助手" />
+      </div>
+      <p class="proxy-status">${proxyStatusText()}</p>
+      <div class="chat-log" aria-live="polite">
+        ${state.chatMessages
+          .map(
+            (message) => `
+              <div class="chat-message ${message.role}">
+                <span>${message.role === 'agent' ? 'AI' : '我'}</span>
+                <p>${formatChemistryText(message.text)}</p>
+              </div>
+            `
+          )
+          .join('')}
+      </div>
+      <div class="chat-input-row">
+        <input class="text-input" value="${escapeHtml(state.chatInput)}" data-input="chat" placeholder="输入一个实验性质问题" ${state.chatPending ? 'disabled' : ''} />
+        <button class="send-button" data-action="send-chat" type="button" aria-label="发送问题" ${state.chatPending ? 'disabled' : ''}>
+          <i data-lucide="send" aria-hidden="true"></i>
+        </button>
+      </div>
+    </section>
+  `;
+}
+
+function renderExternalToolsPanel(): string {
+  return `
+    <section class="external-tools-panel" aria-label="外部学习工具接口">
+      <div>
+        <p class="section-kicker">迁移工具</p>
+        <h2>外部学习接口</h2>
+      </div>
+      ${renderExternalToolRow(
+        '工具性质问答',
+        '连接课堂使用的性质问答工具。',
+        'tool-qa-url',
+        state.toolQaUrl
+      )}
+      ${renderExternalToolRow(
+        '个人反思总结',
+        '连接学习反思与总结页面。',
+        'reflection-url',
+        state.reflectionUrl
+      )}
+    </section>
+  `;
+}
+
+function renderExternalToolRow(title: string, description: string, inputKind: string, value: string): string {
+  const safeUrl = normalizeProxyUrl(value);
+  const inputId = `${inputKind}-input`;
+  return `
+    <div class="external-tool-row">
+      <div class="external-tool-copy">
+        <h3>${escapeHtml(title)}</h3>
+        <p>${escapeHtml(description)}</p>
+      </div>
+      <label class="input-label" for="${inputId}">${escapeHtml(title)} URL</label>
+      <div class="external-tool-action-row">
+        <input id="${inputId}" class="text-input" value="${escapeHtml(value)}" data-input="${inputKind}" placeholder="https://..." />
+        ${
+          safeUrl
+            ? `<a class="external-tool-launch" href="${escapeHtml(safeUrl)}" target="_blank" rel="noreferrer">打开</a>`
+            : '<button class="external-tool-launch" type="button" disabled>待配置</button>'
+        }
+      </div>
+    </div>
   `;
 }
 
@@ -1004,18 +1093,17 @@ function renderReagentCompoundPanel(compound: Compound): string {
 function renderReagentPracticeSwitch(): string {
   return `
     <div class="practice-switch" role="group" aria-label="基础练习方式">
-      ${reagentPracticeModeButton('self-test', '自测模式', '手动选择分子')}
-      ${reagentPracticeModeButton('challenge', '挑战闯关', '随机题库推进')}
+      ${reagentPracticeModeButton('self-test', '自测模式')}
+      ${reagentPracticeModeButton('challenge', '挑战闯关')}
     </div>
   `;
 }
 
-function reagentPracticeModeButton(mode: ReagentPracticeMode, title: string, description: string): string {
+function reagentPracticeModeButton(mode: ReagentPracticeMode, title: string): string {
   const active = state.reagentPracticeMode === mode;
   return `
     <button class="practice-mode-button ${active ? 'active' : ''}" data-reagent-practice-mode="${mode}" type="button" aria-pressed="${active}">
       <span>${title}</span>
-      <small>${description}</small>
     </button>
   `;
 }
@@ -1221,7 +1309,11 @@ function feedbackBlock(message: string): string {
 function bindEvents(): void {
   appRoot.querySelectorAll<HTMLButtonElement>('[data-mode]').forEach((button) => {
     button.addEventListener('click', () => {
-      state.mode = button.dataset.mode as Mode;
+      const nextMode = button.dataset.mode;
+      if (!isMode(nextMode)) {
+        return;
+      }
+      state.mode = nextMode;
       render();
     });
   });
@@ -1371,6 +1463,20 @@ function bindEvents(): void {
         state.proxyUrl = input.value.trim();
         safeLocalStorageSet('deepseekProxyUrl', state.proxyUrl);
       }
+      if (kind === 'tool-qa-url') {
+        state.toolQaUrl = input.value.trim();
+        safeLocalStorageSet('toolQaUrl', state.toolQaUrl);
+      }
+      if (kind === 'reflection-url') {
+        state.reflectionUrl = input.value.trim();
+        safeLocalStorageSet('reflectionUrl', state.reflectionUrl);
+      }
+    });
+
+    input.addEventListener('change', () => {
+      if (input.dataset.input === 'tool-qa-url' || input.dataset.input === 'reflection-url') {
+        render();
+      }
     });
 
     input.addEventListener('keydown', (event) => {
@@ -1416,6 +1522,10 @@ function nextCuriosityQuestion(): void {
 
   state.curiosityQuestionIndex = (state.curiosityQuestionIndex + 1) % curiosityQuestions.length;
   render();
+}
+
+function isMode(value: string | undefined): value is Mode {
+  return value === 'method' || value === 'reagent' || value === 'pair' || value === 'puzzle' || value === 'innovation';
 }
 
 function isMethodNodeId(value: string | undefined): value is string {
@@ -1847,6 +1957,10 @@ function getInitialProxyUrl(): string {
     savedProxyUrl: safeLocalStorageGet('deepseekProxyUrl'),
     envProxyUrl: import.meta.env.VITE_DEEPSEEK_PROXY_URL
   });
+}
+
+function getInitialExternalToolUrl(storageKey: string, envUrl: string | undefined): string {
+  return normalizeProxyUrl(safeLocalStorageGet(storageKey) ?? '') || normalizeProxyUrl(envUrl ?? '');
 }
 
 function safeLocalStorageGet(key: string): string | null {
