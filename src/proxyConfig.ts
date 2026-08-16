@@ -4,8 +4,6 @@ export interface ProxyUrlInput {
   envProxyUrl?: string;
 }
 
-export const DEFAULT_DEEPSEEK_PROXY_URL = 'https://organic-structure-miniapp.vercel.app/api/deepseek';
-
 export function resolveInitialProxyUrl(input: ProxyUrlInput): string {
   const queryProxy = getQueryProxyUrl(input.search ?? '');
   if (queryProxy) return queryProxy;
@@ -14,7 +12,7 @@ export function resolveInitialProxyUrl(input: ProxyUrlInput): string {
   if (envProxyUrl) return envProxyUrl;
 
   if (input.hostname.endsWith('github.io')) {
-    return DEFAULT_DEEPSEEK_PROXY_URL;
+    return '';
   }
 
   if (isLocalHost(input.hostname)) {

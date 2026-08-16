@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { DEFAULT_DEEPSEEK_PROXY_URL, resolveInitialProxyUrl } from '../src/proxyConfig';
+import { resolveInitialProxyUrl } from '../src/proxyConfig';
 
 describe('DeepSeek proxy URL resolution', () => {
   test('prefers a safe query parameter and trims it', () => {
@@ -28,17 +28,17 @@ describe('DeepSeek proxy URL resolution', () => {
     ).toBe('/api/deepseek');
   });
 
-  test('automatically uses the managed proxy on GitHub Pages', () => {
-    expect(resolveInitialProxyUrl({ hostname: '77zmf.github.io' })).toBe(DEFAULT_DEEPSEEK_PROXY_URL);
+  test('uses the rule assistant on GitHub Pages when no verified proxy is configured', () => {
+    expect(resolveInitialProxyUrl({ hostname: '77zmf.github.io' })).toBe('');
   });
 
-  test('ignores an unsafe query override and uses the managed GitHub Pages proxy', () => {
+  test('ignores an unsafe query override on GitHub Pages', () => {
     expect(
       resolveInitialProxyUrl({
         hostname: '77zmf.github.io',
         search: '?deepseekProxy=javascript%3Aalert(1)'
       })
-    ).toBe(DEFAULT_DEEPSEEK_PROXY_URL);
+    ).toBe('');
   });
 
   test('rejects protocol-relative proxy URLs', () => {
@@ -47,7 +47,7 @@ describe('DeepSeek proxy URL resolution', () => {
         hostname: '77zmf.github.io',
         search: '?proxy=%2F%2Fevil.example.com%2Fapi%2Fdeepseek'
       })
-    ).toBe(DEFAULT_DEEPSEEK_PROXY_URL);
+    ).toBe('');
   });
 
   test('uses the rule assistant on local development hosts', () => {

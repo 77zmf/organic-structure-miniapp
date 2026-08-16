@@ -61,7 +61,7 @@ describe('app learning dimension labels', () => {
     expect(root.innerHTML).not.toContain('DeepSeek 代理 URL');
     expect(root.innerHTML).not.toContain('data-input="proxy-url"');
     expect(root.innerHTML).not.toContain('测试连接');
-    expect(root.innerHTML).toContain('智能问答已自动接入');
+    expect(root.innerHTML).toContain('规则助手已就绪');
   });
 
   test('renders the requested three learning dimension names', async () => {
@@ -663,7 +663,10 @@ describe('app chemistry notation and advanced puzzle clues', () => {
       }))
     );
 
-    await importApp(root, { hostname: '77zmf.github.io' });
+    await importApp(root, {
+      hostname: '77zmf.github.io',
+      search: '?deepseekProxy=%2Fapi%2Fdeepseek'
+    });
     puzzleTab.click();
     chatInput.inputEvent();
     sendChat.click();
@@ -691,7 +694,10 @@ describe('app chemistry notation and advanced puzzle clues', () => {
       }))
     );
 
-    await importApp(root, { hostname: '77zmf.github.io' });
+    await importApp(root, {
+      hostname: '77zmf.github.io',
+      search: '?deepseekProxy=%2Fapi%2Fdeepseek'
+    });
     puzzleTab.click();
     chatInput.inputEvent();
     sendChat.click();
@@ -721,7 +727,10 @@ describe('app chemistry notation and advanced puzzle clues', () => {
       }))
     );
 
-    await importApp(root, { hostname: '77zmf.github.io' });
+    await importApp(root, {
+      hostname: '77zmf.github.io',
+      search: '?deepseekProxy=%2Fapi%2Fdeepseek'
+    });
     puzzleTab.click();
     chatInput.inputEvent();
     sendChat.click();
