@@ -660,8 +660,6 @@ function renderReagentMode(): string {
                   .join('')}
               </div>
 
-              ${renderPhenomenonPredictionPanel(challengePassed)}
-
               <div class="answer-row" aria-label="反应判断">
                 <button class="judge-button ${state.reagentAnswer === 'yes' ? 'selected yes' : ''}" data-answer="yes" type="button" aria-pressed="${state.reagentAnswer === 'yes'}" ${challengePassed ? 'disabled' : ''}>
                   会反应
@@ -670,6 +668,8 @@ function renderReagentMode(): string {
                   不反应
                 </button>
               </div>
+
+              ${renderPhenomenonPredictionPanel(challengePassed)}
 
               <button class="primary-action" data-action="submit-reagent" type="button" ${challengePassed ? 'disabled' : ''}>
                 <i data-lucide="check-circle-2" aria-hidden="true"></i>
@@ -687,10 +687,10 @@ function renderReagentMode(): string {
 
 function renderPhenomenonPredictionPanel(disabled: boolean): string {
   return `
-    <section class="prediction-panel" aria-label="先预测实验现象">
+    <section class="prediction-panel" aria-label="再预测实验现象">
       <div class="prediction-title-row">
         <p class="section-kicker">实验现象</p>
-        <h3>先预测现象</h3>
+        <h3>再预测现象</h3>
       </div>
       <div class="prediction-grid">
         ${phenomenonOptions

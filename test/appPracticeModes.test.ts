@@ -125,15 +125,16 @@ describe('app reagent practice modes', () => {
     expect(root.innerHTML).not.toContain('<small>');
   });
 
-  test('renders phenomenon prediction choices before reagent submission', async () => {
+  test('renders reaction judgement before phenomenon prediction and reagent submission', async () => {
     const root = createRoot();
 
     await importApp(root);
 
-    expect(root.innerHTML).toContain('先预测现象');
+    expect(root.innerHTML).toContain('再预测现象');
     expect(root.innerHTML).toContain('data-phenomenon="decolorize"');
     expect(root.innerHTML).toContain('无明显现象');
-    expect(root.innerHTML.indexOf('先预测现象')).toBeLessThan(root.innerHTML.indexOf('data-action="submit-reagent"'));
+    expect(root.innerHTML.indexOf('aria-label="反应判断"')).toBeLessThan(root.innerHTML.indexOf('再预测现象'));
+    expect(root.innerHTML.indexOf('再预测现象')).toBeLessThan(root.innerHTML.indexOf('data-action="submit-reagent"'));
     expect(root.innerHTML).not.toContain('现象预测正确');
     expect(root.innerHTML).not.toContain('现象需要复盘');
   });
