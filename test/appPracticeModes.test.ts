@@ -61,7 +61,7 @@ describe('app learning dimension labels', () => {
     expect(root.innerHTML).not.toContain('DeepSeek 代理 URL');
     expect(root.innerHTML).not.toContain('data-input="proxy-url"');
     expect(root.innerHTML).not.toContain('测试连接');
-    expect(root.innerHTML).toContain('规则助手已就绪');
+    expect(root.innerHTML).toContain('智能问答已自动接入');
   });
 
   test('renders the requested three learning dimension names', async () => {

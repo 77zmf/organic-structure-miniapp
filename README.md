@@ -43,11 +43,11 @@ npm run build
    - `DEEPSEEK_MODEL`: 可选，默认 `deepseek-v4-flash`
    - `ALLOWED_ORIGINS`: 可选，默认允许 `https://77zmf.github.io`、`http://localhost:5173`、`http://127.0.0.1:5173`
 3. 部署后得到类似 `https://your-app.vercel.app/api/deepseek` 的代理地址。
-4. 确认代理已能完成真实问答后，在 GitHub Pages 构建环境设置 `VITE_DEEPSEEK_PROXY_URL`。学生端无需填写代理地址。
+4. GitHub Pages 会自动使用已验证的 `https://organic-structure-miniapp.vercel.app/api/deepseek`，学生端无需填写代理地址。
 
 如果网页和 API 都部署在同一个 Vercel 项目，应用会自动使用同源 `/api/deepseek`。需要改用其他代理时，可在构建环境设置 `VITE_DEEPSEEK_PROXY_URL`，或使用仅供部署排查的 `?deepseekProxy=https://...` 查询参数。
 
-未配置已验证的远程代理时，GitHub Pages 默认直接使用本地规则助手。远程服务运行期间发生异常时，问答也会自动切换为规则助手，学生仍可继续完成推理。
+远程服务运行期间发生异常时，问答会自动切换为规则助手，学生仍可继续完成推理。需要改用其他代理时，可在构建环境设置 `VITE_DEEPSEEK_PROXY_URL`。
 
 ## 迁移学习工具
 
